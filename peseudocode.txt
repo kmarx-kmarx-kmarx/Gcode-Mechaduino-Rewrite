@@ -1,0 +1,27 @@
+Pseudocode description of operation.
+
+setup():
+  initialize serial
+  initialize pins
+  initialize spi
+  initialize interrupts
+
+loop():
+  if command in command buffer AND command is STOP:
+    STOP motor
+
+  if ready for new command AND command in command buffer:
+    if not STOPPED
+      run command
+    remove command from command buffer
+
+  if new serial command AND command buffer is empty:
+    process the serial command and put it in the buffer
+    send acknowldegement
+
+  if command buffer is empty:
+    request new command
+
+  if in debugging mode:
+    if it is time to send debug information:
+      send debug information
