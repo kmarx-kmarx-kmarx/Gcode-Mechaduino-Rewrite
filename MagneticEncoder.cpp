@@ -3,7 +3,6 @@
   DESCRIPTION: This file contains the functions necessary to initialize and read from the magnetic rotary encoder
 
         encoder_setup()   initialize the encoder.
-
         encoder_read()    read a value from the encoder
         
         
@@ -12,9 +11,15 @@
   GLOBAL VARIABLES: none
 
   INCLUDES:
+        Arduino.h Standard board utilities
         SPI.h     For SPI communication with the encoder
+        MagneticEncoder.h For macros
   -----------------------------------------------------------------------------
   */
+
+#include <Arduino.h>
+#include <SPI.h>
+#include "MagneticEncoder.h"
 
 /*
   -----------------------------------------------------------------------------
@@ -33,6 +38,7 @@
   SHARED VARIABLES / GLOBAL VARIABLES: none
 
   DEPENDENCIES:
+        Arduino.h: for pin manipulations
         SPI.h:     for SPI communications
   -----------------------------------------------------------------------------
 */
@@ -54,7 +60,7 @@ void encoder_setup(){
 
 /*
   -----------------------------------------------------------------------------
-  DESCRIPTION: readEncoder() reads the angle value from the magnetic encoder
+  DESCRIPTION: encoder_read() reads the angle value from the magnetic encoder
 
   OPERATION:   We read in the bytes from the encoder and put them into a long.
 
@@ -71,9 +77,10 @@ void encoder_setup(){
 
   DEPENDENCIES:
         SPI.h:     for SPI communications
+        MagneticEncoder.h: has macro for setting the chip select pin
   -----------------------------------------------------------------------------
 */
-int readEncoder(){
+int encoder_read(){
   long angleTemp;
   
   CHIPSELECT_LOW();
