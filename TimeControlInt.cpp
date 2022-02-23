@@ -2,15 +2,19 @@
   -----------------------------------------------------------------------------
   DESCRIPTION: This file contains the functions necessary to initialize the time control interrupts.
         setup_TCInterrupts()   Initialize the Timer Compare interrupts. We have two; one for the main control loop and another for constant acceleration control
+        
         enable_TCInterrupts()  Enable both interrupts
+        
         disable_TCInterrupts() Disable both interrupts
+        
         TC5_Handler()          Timer-control-interrupt function responsible for motor operation
         
 
-  SHARED VARIABLES: None
+  SHARED VARIABLES: Various PID loop parameters.
 
   GLOBAL VARIABLES:
-        Various built-in interrupt control registers are set; no new global variables are used in this file.
+        Various built-in interrupt control registers are set.
+        Several PID loop parameters are global for easy reading for debugging.
 
   INCLUDES:
         TimeControlInt.h: Contains macros and function declarations
@@ -27,15 +31,14 @@
 #include <Arduino.h>
 // Define constants
 // Frequency and Period for the control loop
-const float BASECLK        = 48000000;
-const float CTRL_LOOP_HZ   = 6500;
+const int BASECLK             = 48000000;
+const int TARG_CTRL_LOOP_HZ   = 6500;
 const int CTRL_LOOP_PERIOD = BASECLK / CTRL_LOOP_HZ;
 // Frequency and Period for the command loop
 const float CMD_LOOP_HZ    = 500;
 const int CMD_LOOP_PERIOD  = BASECLK / CMD_LOOP_HZ;
 // PID loop parameters; 
-const int FIXED_PT_SCALE = 10000; // Increasing this value increases precision but brings us closer to overflowing
-const int PA = VAL_PER_STEP;      // Target position is 1 step away from current position. Can increase for faster repsonse
+const int PA = VAL_PER_STEP;       // Target position is 1 step away from current position. Can increase for faster repsonse
 const int ITERM_MAX = (200/360)*VALS_PER_REV; // Integral term winding limit
 
 // Parameters for positioning mode:

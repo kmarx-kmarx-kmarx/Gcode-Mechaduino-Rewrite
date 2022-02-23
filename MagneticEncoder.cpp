@@ -3,7 +3,8 @@
   DESCRIPTION: This file contains the functions necessary to initialize and read from the magnetic rotary encoder
 
         encoder_setup()   initialize the encoder.
-        encoder_read()    read a value from the encoder
+
+        encoder_read()    read a value from the encoder; value ranges from 0 to 2^14-1
         
         
   SHARED VARIABLES: None
@@ -13,7 +14,7 @@
   INCLUDES:
         Arduino.h Standard board utilities
         SPI.h     For SPI communication with the encoder
-        MagneticEncoder.h For macros
+        MagneticEncoder.h For macros and function headers
   -----------------------------------------------------------------------------
   */
 
@@ -21,16 +22,24 @@
 #include <SPI.h>
 #include "MagneticEncoder.h"
 
+// Initialize constants
+const int SPI_SPEED = 10000000;    // CLK pin frequency
+const int SPI_PAUSE = 10;          // Wait this many ms for SPI to finish initializing
+const int CS_PIN = A2;             // The CS pin number - references Arduino macro
+
+const int COUNT_PER_REV = 1<<14;  // From encoder datasheet, 2^14
+
+
 /*
   -----------------------------------------------------------------------------
-  DESCRIPTION: setupSPI() starts SPI communications with the encoder and keeps the transaction open.
+  DESCRIPTION: encoder_setup() starts SPI communications with the encoder and keeps the transaction open.
 
   OPERATION:   The settings for the AS5047D magnetic encoder are set, then a SPI transaction is opened using these settings. The transaction remains open and is not closed.
 
   ARGUMENTS/RETURNS: none
 
   INPUTS / OUTPUTS:
-        The MISO pin is set as an input and the MOSI and CLK pin is set as an output; signals are input/output along these lines to initialize the transaction.
+        The MISO pin is set as an input and the MOSI, CLK, and CS pins are set as an output; signals are input/output along these lines to initialize the transaction.
 
   LOCAL VARIABLES: 
         SPISettings settingsA:  used to store the SPI settings for the magnetic encoder.
@@ -70,7 +79,7 @@ void encoder_setup(){
         The MISO pin is set as an input and the MOSI and CLK pin is set as an output; signals are input/output along these lines to perform the transaction.
 
   LOCAL VARIABLES: 
-        long angle, for storing the two byte angle measurement
+        int angle, for storing the two byte angle measurement (ints are 4 bytes on the SAMD21)
         bytes b1, b2, for storing the reading from the encoder
 
   SHARED VARIABLES / GLOBAL VARIABLES: none
@@ -81,15 +90,18 @@ void encoder_setup(){
   -----------------------------------------------------------------------------
 */
 int encoder_read(){
-  long angleTemp;
+  int angleTemp;
   
   CHIPSELECT_LOW();
 
+  // Read in two bytes
   byte b1 = SPI.transfer(0xFF);
   byte b2 = SPI.transfer(0xFF);
 
+  // Put the two bytes into the int and mask off extraneous high bits
   angleTemp = (((b1 << 8) | b2) & 0B0011111111111111);
 
   CHIPSELECT_HIGH();
+  
   return angleTemp;
 }

@@ -26,14 +26,16 @@
   #define ledPin_HIGH() (REG_PORT_OUTSET0 = PORT_PA17)
   #define ledPin_LOW() (REG_PORT_OUTCLR0 = PORT_PA17)
 
-extern const int STEP_PER_REV;
-extern const int VALS_PER_REV;
-extern const int VAL_PER_STEP;
-extern const int QUARTER_TURN;
-extern const int MICROSTEPS;          // 1/32 microstepping
-extern const int MOTOR_SETTLE;        // ms it takes for the motor to settle
-extern const bool CCW;
-extern const bool CW;
-// Create constant parameters for controlling the motor
-extern const int   uMAX; // Set the maximum "effort"; (225 duty/3.3 volts) * (iMax amps * rSense ohms * 10) gives us a way to convert from target current to PWM duty cycle
+  // Define external constants
+  extern const int STEP_PER_REV;
+  extern const int VALS_PER_REV;
+  extern const int VAL_PER_STEP;
+  extern const int QUARTER_TURN;
+  extern const int MICROSTEPS;
+  extern const int MOTOR_SETTLE;
+  extern const int FIXED_PT_SCALE;
+  extern const bool CCW;
+  extern const bool CW;
+  // Create constant parameters for controlling the motor
+  extern const int   uMAX;
 #endif

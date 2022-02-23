@@ -16,14 +16,14 @@
   #define IS_HEX(ch)((((int)ch >= 48) || ((int)ch <= 57)) || (((int)ch >= 65) || ((int)ch <= 70)))
 
   #define COMMAND_SIZE 32   // Commands are 31 characters long (at most); we need to terminate with a null
-  constexpr int DEBUG_DEFAULT = 500;  // We send a debug message every 500 ms by default
-  constexpr int DELAY_COUNT   = 10;   // The data can be late this many times before we give up on sending it
-  constexpr int DELAY_TIME    = 50;   // Wait this many microseconds for new data to appear on the serial buffer
-  constexpr char REQ_CHAR     = 'p';  // Send this character for request. We choose a character that does not appear in any other communication
-  constexpr char BAD_CMD_CHAR = 'q';
-  constexpr char OK_CMD_CHAR  = 'r';
+  const int DEBUG_DEFAULT = 500;  // We send a debug message every 500 ms by default
+  const int DELAY_COUNT   = 10;   // The data can be late this many times before we give up on sending it
+  const int DELAY_TIME    = 50;   // Wait this many microseconds for new data to appear on the serial buffer
+  const char REQ_CHAR     = 'p';  // Send this character for request. We choose a character that does not appear in any other communication
+  const char BAD_CMD_CHAR = 'q';
+  const char OK_CMD_CHAR  = 'r';
 
-  constexpr int BAUDRATE = 115200;    // Set the baud rate
+  const int BAUDRATE = 115200;    // Set the baud rate
 
   bool read_serial(char command[]);
   void send_ack(bool isValid);
