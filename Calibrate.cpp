@@ -9,6 +9,8 @@
 
         findijStart(int readings[], int* istart, int* jstart): Find where in the lookup table the reading should go
 
+        wired_correctly(): indicates whether the motor was wired correctly
+
   SHARED VARIABLES: Various variables for tracking the flash data.
 
   GLOBAL VARIABLES: lookup[]: lookup table for encoder-value-to-angle conversions
@@ -18,6 +20,7 @@
         TimeControlInt.h: We need this to turn off the interrupts
         MagneticEncoder.h: For macros and encoder reading functions
         Arduino.h: Has macros and definitions for the board
+        stdint.h: 
   -----------------------------------------------------------------------------
 */
 
@@ -25,23 +28,19 @@
 #include <FlashStorage.h>
 #include "MagneticEncoder.h"
 #include "MotorCtrl.h"
+#include "TimeControlInt.h"
 #include <Arduino.h>
 
-// Initialize lookup table with 2^14 elements
+// Initialize lookup table with 2^14 elements, one for each possible encoder value
 extern const int __attribute__((__aligned__(256))) lookup[16384] = {};
 
 // Initialize flash parameters
 static FlashClass flash;               // Create new flash object
 
-static const unsigned page_size = 256; // Parameters for allocating data
 static unsigned page_count;
-static const unsigned ints_per_page = page_size / sizeof(int);
 
-static int page[ints_per_page];        // Buffer everthing that will be stored in ram
+static int page[INTS_PER_PAGE];        // Buffer everthing that will be stored in ram
 static const void * page_ptr;          // Pointer to flash page
-
-// Constants for operation
-const int N_AVG = 16;
 
 /*
   -----------------------------------------------------------------------------
@@ -97,7 +96,7 @@ static void store_lookup(int lookupAngle) {
   // Add angle to the page
   page[page_count++] = lookupAngle;
   // If we don't have a full page, return
-  if(page_count < ints_per_page){
+  if(page_count < INTS_PER_PAGE){
     return;
   }
 
@@ -105,7 +104,7 @@ static void store_lookup(int lookupAngle) {
   write_page();
 
   // reset our counters and increment our flash page
-  page_ptr += sizeof(page);
+  page_ptr = (char*)page_ptr + sizeof(page); // cast to char to adhere to GCC standard
   page_count = 0;
   memset(page, 0, sizeof(page));
 }
@@ -124,19 +123,16 @@ static void store_lookup(int lookupAngle) {
 
   INPUTS / OUTPUTS: None
 
-  LOCAL VARIABLES: int ticks, stepNo: Track the position along the readings and 
+  LOCAL VARIABLES: int ticks, stepNo: Track the position along the readings
 
-  SHARED VARIABLES: int page_count: This is our index of the page buffer array
-                    int page[]: This is the page buffer array 
-                    void * page_ptr: This void points to the start of the flash page we want to write to
+  SHARED VARIABLES: None
 
   GLOBAL VARIABLES: None
 
-  DEPENDENCIES:
-        FlashStorage.h:  has definitions for flash manipulations.
+  DEPENDENCIES: None
   -----------------------------------------------------------------------------
 */
-void findijStart(int readings[], int* istart, int* jstart){
+static void findijStart(int readings[], int* istart, int* jstart){
   int ticks;
   int stepNo;
   // We know readings[] will always be STEP_PER_REV long
@@ -165,9 +161,86 @@ void findijStart(int readings[], int* istart, int* jstart){
 
 /*
   -----------------------------------------------------------------------------
+  DESCRIPTION: wired_correctly() returns true if the motor is wired correctly and false if it's wired backwards. 
+
+  OPERATION:   We take a few steps in the forwards direction then check to see if the encoder reading increased a small amount. If it underflowed or decreased, the motor is wired backwards.
+
+  ARGUMENTS:   None
+
+  RETURNS:     bool; true if wired correctly and false otherwise
+
+  INPUTS:     We read values from the encoder.
+  
+  OUTPUTS:   The motor moves. We also send error messages over serial. We set the motor position to 0 before and after running this operation
+
+  LOCAL VARIABLES: int stepIdx: current step index
+               int lastencoderReading, encoderReading: the encoder readings before and after the steps respectively
+               int diff: the difference between encoderReading and lastencoderReading
+
+  SHARED VARIABLES: None
+
+  GLOBAL VARIABLES: None
+
+  DEPENDENCIES: MagneticEncoder.h: Read from the encoder
+                MotorCtrl.h: Move the motor
+  -----------------------------------------------------------------------------
+*/
+
+static bool wired_correctly(){
+  int encoderReading = 0;
+  int diff = 0;
+  int lastencoderReading = 0;
+  int stepIdx = 0;
+
+  SerialUSB.println("Checking wiring...");
+  disable_TCInterrupts();
+  output(0, uMAX >> 2); // go to point 0
+  // Take a couple steps to make sure it's working right; sometimes the initial steps cause errors.
+  stepIdx = one_step(CW, stepIdx);
+  delay(MOTOR_SETTLE);
+  stepIdx = one_step(CW, stepIdx);
+  delay(MOTOR_SETTLE);
+  //average multple readings at each step
+  for (int reading = 0; reading < N_AVG; reading++){  
+    // It is unlikely we will be reading values right at the wrap point so we will ignore this
+    lastencoderReading += encoder_read();
+    // Wait a bit before the next reading
+    delay(MOTOR_SETTLE);
+  }
+  lastencoderReading /= N_AVG;
+
+  // Take another step and take another reading
+  stepIdx = one_step(CW, stepIdx);
+  delay(MOTOR_SETTLE);
+  for (int reading = 0; reading < N_AVG; reading++) {  //average multple readings at each step
+    encoderReading += encoder_read();
+    delay(MOTOR_SETTLE);
+  }
+  encoderReading /= N_AVG;
+
+  // Take the difference
+  diff = (encoderReading - lastencoderReading);
+  // Return to stepIdx 0
+  stepIdx = 0;
+  output(0, uMAX >> 2);
+  delay(MOTOR_SETTLE);
+  // Wired backwards if:
+  // 1) we see a rollover from low to high (should be high to low)
+  // 2) we see a small step lower (should be higher)
+  if((diff > (VALS_PER_REV/2)) || (diff < 0)){
+    SerialUSB.println("Appears to be backwards");
+    return false;
+  }
+  else{
+    return true; // If wired correctly, return true
+  }
+}
+
+/*
+  -----------------------------------------------------------------------------
   DESCRIPTION: calibrate() runs the calibration routine  
 
-  OPERATION:   
+  OPERATION:   We first take a couple steps to verify the motor is operating properly; if the encoder shows the motor is turning the opposite direction, the motor wires must be reversed. We then step through each step, read the encoder, and interpolate 
 
   ARGUMENTS:   none
 
@@ -206,58 +279,20 @@ int calibrate() {
 
   int stepIdx = 0;
 
-  SerialUSB.println("Beginning calibration routine...");
-  disableTCInterrupts();
-  // Take a couple steps to make sure it's working right
-  stepIdx = oneStep(CW, stepIdx);
-  delay(MOTOR_SETTLE);
-  stepIdx = oneStep(CW, stepIdx);
-  delay(MOTOR_SETTLE);
-  //average multple readings at each step
-  for (int reading = 0; reading < N_AVG; reading++){  
-    // add VALS_PER_REV to each reading and then modulo to prevent wraparound errors
-    currentencoderReading = encoder_read() + VALS_PER_REV;
-    lastencoderReading += currentencoderReading;
-    // Wait a bit before the next reading
-    delay(MOTOR_SETTLE);
-  }
-  lastencoderReading /= avg;
-  lastencoderReading = lastencoderReading % VALS_PER_REV;
-
-  // Take another step and take another reading
-  stepIdx = oneStep(CW, stepIdx);
-  delay(MOTOR_SETTLE);
-  for (int reading = 0; reading < avg; reading++) {  //average multple readings at each step
-    currentencoderReading = encoder_read() + VALS_PER_REV;
-    encoderReading += currentencoderReading;
-    delay(MOTOR_SETTLE);
-  }
-  encoderReading /= avg;
-  encoderReading = encoderReading % VALS_PER_REV;
-
-  // Take the difference
-  currentencoderReading = (encoderReading - lastencoderReading);
-  // Wired backwards if:
-  // 1) we see a rollover from low to high (should be high to low)
-  // 2) we see a small step lower (should be higher)
-  if((currentencoderReading > (VALS_PER_REV/2)) || (currentencoderReading < 0)){
-    SerialUSB.println("Try again. If problem persists, swap wiring");
-    return CALIBRATION_FAIL;
+  // Check to see if we are wired backwards
+  if(!wired_correctly){
+    return ;
   }
 
-  // Return to stepIdx 0
-  stepIdx = 0;
-  output(0, uMAX >> 2);
-  delay(MOTOR_SETTLE);
   
   //step through all full step positions, recording their encoder readings
   for (int x = 0; x < VALS_PER_REV; x++) {     
     encoderReading = 0;               // init. as 0 for averages
     delay(MOTOR_SETTLE);              //moving too fast may not give accurate readings.  Motor needs time to settle after each step.
-    lastencoderReading = readEncoder();
+    lastencoderReading = encoder_read();
     
     for (int reading = 0; reading < N_AVG; reading++) {  //average multple readings at each step
-      currentencoderReading = readEncoder();
+      currentencoderReading = encoder_read();
 
       // If we are on the edge of wrapping around, add
       // or subtract as needed to keep the value correct
@@ -331,7 +366,7 @@ int calibrate() {
 }
 
 
-int read_angle(avg) {
+static int read_angle(int avg) {
   int prevReading = readEncoder();
   int encoderReading = readEncoder();
 

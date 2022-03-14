@@ -22,14 +22,6 @@
 #include <SPI.h>
 #include "MagneticEncoder.h"
 
-// Initialize constants
-const int SPI_SPEED = 10000000;    // CLK pin frequency
-const int SPI_PAUSE = 10;          // Wait this many ms for SPI to finish initializing
-const int CS_PIN = A2;             // The CS pin number - references Arduino macro
-
-const int COUNT_PER_REV = 1<<14;  // From encoder datasheet, 2^14
-
-
 /*
   -----------------------------------------------------------------------------
   DESCRIPTION: encoder_setup() starts SPI communications with the encoder and keeps the transaction open.

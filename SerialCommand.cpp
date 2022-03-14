@@ -11,7 +11,7 @@
         send_debug(int interval)     This function sends the debug information every interval (in milliseconds)
         
   SHARED VARIABLES:
-        unsigned int prevDebugTime: Used to keep track of time since the last debug message was sent
+        uint32_t prevDebugTime: Used to keep track of time since the last debug message was sent
 
   GLOBAL VARIABLES:
 
@@ -340,21 +340,24 @@ void send_ack(bool isValid){
 
   GLOBAL VARIABLES:
         flags: We read flags to send it out as our ack
+        yw:    Motor position
+        u:     Motor "effort", a measure of torque
+        r:     Motor setpoint, either the target position or target velocity
 
   DEPENDENCIES:
         State.h:      for the flags, position, setpoint, and effort variables
   -----------------------------------------------------------------------------
 */ 
-unsigned long prevDebugTime = 0;
+uint32_t prevDebugTime = 0;
 void send_debug(int interval){
   // If we are debugging, send state variables as bytes
   // Here, we are sending out:
-  //    0) flags
+  //    0) flags (i.e. what command to run)
   //    1) time in ms
   //    2) position in degrees
   //    3) effort 
   //    4) setpoint 
-  uint time = millis(); // get the time
+  uint32_t time = millis(); // get the time
   // copy all these values into byte array representations
   // note: all these are 4 byte values
   uint8_t * timebytes = (uint8_t *) &time;
