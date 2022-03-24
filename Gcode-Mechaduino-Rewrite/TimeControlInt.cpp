@@ -29,60 +29,25 @@
 #include "MotorCtrl.h"
 #include "MagneticEncoder.h"
 #include <Arduino.h>
-// Define constants
-// Frequency and Period for the control loop
-const int BASECLK             = 48000000;
-const int TARG_CTRL_LOOP_HZ   = 6500;
-const int CTRL_LOOP_PERIOD = BASECLK / CTRL_LOOP_HZ;
-// Frequency and Period for the command loop
-const float CMD_LOOP_HZ    = 500;
-const int CMD_LOOP_PERIOD  = BASECLK / CMD_LOOP_HZ;
-// PID loop parameters; 
-const int PA = VAL_PER_STEP;       // Target position is 1 step away from current position. Can increase for faster repsonse
-const int ITERM_MAX = (200/360)*VALS_PER_REV; // Integral term winding limit
-
-// Parameters for positioning mode:
-// Integral term parameters
-const int pKi = 0.15 * FIXED_PT_SCALE;        // integral error multiplier for abs. positioning mode
-// Differential term parameters
-const int pLPF = 30;                           // break frequency in Hz, IIR parameter
-const int pLPFa = FIXED_PT_SCALE * exp(-2*PI*pLPF/CTRL_LOOP_HZ); // scaling factor
-const int pLPFb = FIXED_PT_SCALE-pLPFa;                          // scaling factor
-const int pKd   = 250 * FIXED_PT_SCALE;                          // differential error multiplier
-// Proportional term parameters
-const int pKp   = 15 * FIXED_PT_SCALE;         // proportional error multiplier
-
-// Parameters for velocity mode
-// Integral term parameters
-const int vKi = 0.015 * FIXED_PT_SCALE;
-// Differential term parameters 
-const int vLPF  = 100;                                // break frequency in Hz, IIR parameter
-const int vLPFa = FIXED_PT_SCALE *  exp(-2*PI*vLPF/CTRL_LOOP_HZ); // scaling factor
-const int vLPFb = FIXED_PT_SCALE-pLPFa;                                             // scaling factor
-const int vKd   = 0.02 * FIXED_PT_SCALE;        // differential error multiplier
-// Proportional term parameters
-const int vKp   = 0.25 * FIXED_PT_SCALE;         // proportional error multiplier
-
-// Flag constants
-extern const int CMD_READY = 0;
+#include <math.h>
 
 // Define global variables
-volatile int flags = 0;
+volatile int32_t flags = 0;
 volatile char mode = '0';
-volatile long U = 0;     //control effort (abs)
-volatile long u = 0;     //real control effort (not abs)
-volatile long r = 0;     //setpoint
-volatile long y = 0;     // measured angle
-volatile long v = 0;     // estimated velocity  (velocity loop)
-volatile long yw = 0;    // "wrapped" angle (not limited to 0-360)
-volatile long yw_1 = 0;
-volatile long e = 0;     // e = r-y (error)
-volatile long e_1 = 0;   //previous error
+volatile uint32_t U = 0;     //control effort (abs)
+volatile int32_t u = 0;     //real control effort (not abs)
+volatile int32_t r = 0;     //setpoint
+volatile int32_t y = 0;     // measured angle
+volatile int32_t v = 0;     // estimated velocity  (velocity loop)
+volatile int32_t yw = 0;    // "wrapped" angle (not limited to 0-360)
+volatile int32_t yw_1 = 0;
+volatile int32_t e = 0;     // e = r-y (error)
+volatile int32_t e_1 = 0;   //previous error
 // Define shared variables
-volatile long y_1 = 0;     // previous measured angle
-volatile long wrap_count = 0; // Number of full revolutions
-volatile long ITerm = 0;
-volatile long DTerm = 0;
+volatile int32_t y_1 = 0;     // previous measured angle
+volatile int32_t wrap_count = 0; // Number of full revolutions
+volatile int32_t ITerm = 0;
+volatile int32_t DTerm = 0;
 /*
   -----------------------------------------------------------------------------
   DESCRIPTION: setup_TCInterrupts() initializes two timer compare interrupts, timer comare 4 and 5.

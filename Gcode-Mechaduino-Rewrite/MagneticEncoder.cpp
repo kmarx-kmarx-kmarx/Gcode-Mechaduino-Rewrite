@@ -4,7 +4,7 @@
 
         encoder_setup()   initialize the encoder.
 
-        encoder_read()    read a value from the encoder; value ranges from 0 to 2^14-1
+        uint16_t encoder_read()    read a value from the encoder; value ranges from 0 to 2^14-1
         
         
   SHARED VARIABLES: None
@@ -81,8 +81,8 @@ void encoder_setup(){
         MagneticEncoder.h: has macro for setting the chip select pin
   -----------------------------------------------------------------------------
 */
-int encoder_read(){
-  int angleTemp;
+uint16_t encoder_read(){
+  uint16_t angleTemp;
   
   CHIPSELECT_LOW();
 

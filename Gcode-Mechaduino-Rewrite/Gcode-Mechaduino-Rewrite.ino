@@ -19,7 +19,7 @@
         
   SHARED VARIABLES:
         char cmd[COMMAND_SIZE]:  This is the command buffer.
-        int interval:            Time in ms between debug messages
+        uint32_t interval:            Time in ms between debug messages
 
   GLOBAL VARIABLES:
         motor_flags: Used to communicate the motor controller interrpts's state
@@ -96,7 +96,7 @@ void setup()
 
   SHARED VARIABLES: 
         char cmd[COMMAND_SIZE]:  This is the command buffer. COMMAND_SIZE is defined in SerialCommand
-        int interval: time between debug statements, milliseconds
+        uint32_t interval: time between debug statements, milliseconds
         bool debugging: true if we want to send the debug messages
 
   GLOBAL VARIABLES:
@@ -111,7 +111,7 @@ void setup()
         SerialCommand:read the command, send acknowledgement, and send debug info
   -----------------------------------------------------------------------------
 */ 
-int interval = DEBUG_DEFAULT;
+uint32_t interval = DEBUG_DEFAULT;
 bool debugging = false;
 bool stopped = false;
 void loop()

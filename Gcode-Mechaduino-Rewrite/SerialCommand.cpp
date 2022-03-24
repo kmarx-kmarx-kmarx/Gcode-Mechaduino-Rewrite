@@ -71,12 +71,12 @@
 bool read_serial(char command[]){
   char inChar;      // Character being read off the serial buffer
   char sigChar; //
-  int  delays = 0;  // Amount of times we have had to wait for the serial buffer to have data
-  unsigned int  cmdIdx = 0; // Index of command
-  int csumCalc;
-  int csumIdx = 0; // Index on the csum string
+  uint8_t delays = 0;  // Amount of times we have had to wait for the serial buffer to have data
+  uint16_t  cmdIdx = 0; // Index of command
+  int32_t csumCalc;
+  uint16_t csumIdx = 0; // Index on the csum string
   char csumStr[3]; // The checksum is one byte in hexdecimal; we need two characters and then null termination
-  int csumRead;
+  int16_t csumRead;
   // Assume the command is valid and reset the command buffer 0
   bool isValid = true;
   memset(command, 0, COMMAND_SIZE);

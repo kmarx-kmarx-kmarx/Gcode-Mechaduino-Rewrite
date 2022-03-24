@@ -29,18 +29,19 @@
 #include "MagneticEncoder.h"
 #include "MotorCtrl.h"
 #include "TimeControlInt.h"
+#include "Calibrate.h"
 #include <Arduino.h>
 
 // Initialize lookup table with 2^14 elements, one for each possible encoder value
-extern const int __attribute__((__aligned__(256))) lookup[16384] = {};
+extern const uint32_t __attribute__((__aligned__(256))) lookup[16384] = {};
 
 // Initialize flash parameters
 static FlashClass flash;               // Create new flash object
 
-static unsigned page_count;
+static uint32_t page_count;
 
-static int page[INTS_PER_PAGE];        // Buffer everthing that will be stored in ram
-static const void * page_ptr;          // Pointer to flash page
+static int32_t page[INTS_PER_PAGE];        // Buffer everthing that will be stored in ram
+static const void * page_ptr;              // Pointer to flash page
 
 /*
   -----------------------------------------------------------------------------
@@ -66,15 +67,16 @@ static const void * page_ptr;          // Pointer to flash page
 static void write_page() {
   flash.erase((const void*) page_ptr, sizeof(page));
   flash.write((const void*) page_ptr, (const void *) page, sizeof(page));
+  return;
 }
 
 /*
   -----------------------------------------------------------------------------
-  DESCRIPTION: store_lookup(int lookupAngle) stores data to either the page buffer or flash.
+  DESCRIPTION: store_lookup(int32_t lookupAngle) stores data to either the page buffer or flash.
 
   OPERATION:   We add the lookupAngle to our page buffer. Then, if the page buffer is full, we write the page, reset the buffer, and index the page pointer.
 
-  ARGUMENTS:   int lookupAngle: the angle to store
+  ARGUMENTS:   int32_t lookupAngle: the angle to store
 
   RETURNS:     None
 
@@ -92,7 +94,7 @@ static void write_page() {
         FlashStorage.h:  has definitions for flash manipulations.
   -----------------------------------------------------------------------------
 */
-static void store_lookup(int lookupAngle) {
+static void store_lookup(int32_t lookupAngle) {
   // Add angle to the page
   page[page_count++] = lookupAngle;
   // If we don't have a full page, return
@@ -132,7 +134,7 @@ static void store_lookup(int lookupAngle) {
   DEPENDENCIES: None
   -----------------------------------------------------------------------------
 */
-static void findijStart(int readings[], int* istart, int* jstart){
+static void findijStart(uint32_t readings[], uint32_t* istart, uint32_t* jstart){
   int ticks;
   int stepNo;
   // We know readings[] will always be STEP_PER_REV long
@@ -174,8 +176,8 @@ static void findijStart(int readings[], int* istart, int* jstart){
   OUTPUTS:   The motor moves. We also send error messages over serial. We set the motor position to 0 before and after running this operation
 
   LOCAL VARIABLES: int stepIdx: current step index
-               int lastencoderReading, encoderReading: the encoder readings before and after the steps respectively
-               int diff: the difference between encoderReading and lastencoderReading
+               uint16_t lastencoderReading, encoderReading: the encoder readings before and after the steps respectively
+               int32_t diff: the difference between encoderReading and lastencoderReading
 
   SHARED VARIABLES: None
 
@@ -187,10 +189,10 @@ static void findijStart(int readings[], int* istart, int* jstart){
 */
 
 static bool wired_correctly(){
-  int encoderReading = 0;
-  int diff = 0;
-  int lastencoderReading = 0;
-  int stepIdx = 0;
+  uint16_t encoderReading = 0;
+  int32_t diff = 0;
+  uint16_t lastencoderReading = 0;
+  int32_t stepIdx = 0;
 
   SerialUSB.println("Checking wiring...");
   disable_TCInterrupts();
@@ -200,9 +202,13 @@ static bool wired_correctly(){
   delay(MOTOR_SETTLE);
   stepIdx = one_step(CW, stepIdx);
   delay(MOTOR_SETTLE);
+  // Check if we are close to wrapping around and move away from edges
+  while(encoder_read() < (COUNT_PER_REV>>4) || encoder_read() > (COUNT_PER_REV - COUNT_PER_REV>>4)){
+    stepIdx = one_step(CW, stepIdx);
+    delay(MOTOR_SETTLE);
+  }
   //average multple readings at each step
   for (int reading = 0; reading < N_AVG; reading++){  
-    // It is unlikely we will be reading values right at the wrap point so we will ignore this
     lastencoderReading += encoder_read();
     // Wait a bit before the next reading
     delay(MOTOR_SETTLE);
@@ -222,7 +228,7 @@ static bool wired_correctly(){
   diff = (encoderReading - lastencoderReading);
   // Return to stepIdx 0
   stepIdx = 0;
-  output(0, uMAX >> 2);
+  output(stepIdx, uMAX >> 2);
   delay(MOTOR_SETTLE);
   // Wired backwards if:
   // 1) we see a rollover from low to high (should be high to low)
@@ -264,24 +270,24 @@ static bool wired_correctly(){
   -----------------------------------------------------------------------------
 */
 int calibrate() {
-  int encoderReading = 0;
-  int currentencoderReading = 0;
-  int lastencoderReading = 0;
+  uint32_t encoderReading = 0;
+  uint32_t currentencoderReading = 0;
+  uint32_t lastencoderReading = 0;
   
-  int iStart = 0;     //encoder zero position index
-  int jStart = 0;
+  uint32_t iStart = 0;     //encoder zero position index
+  uint32_t jStart = 0;
   
-  int fullStepReadings[STEP_PER_REV]; // Reading at every step
+  uint32_t fullStepReadings[STEP_PER_REV]; // Reading at every step
     
-  int fullStep = 0;
-  int ticks = 0;
-  int lookupAngle = 0;
+  uint32_t fullStep = 0;
+  uint32_t ticks = 0;
+  uint32_t lookupAngle = 0;
 
-  int stepIdx = 0;
+  int32_t stepIdx = 0;
 
   // Check to see if we are wired backwards
-  if(!wired_correctly){
-    return ;
+  if(!wired_correctly()){
+    return BAD_WIRE;
   }
 
   
@@ -296,27 +302,27 @@ int calibrate() {
 
       // If we are on the edge of wrapping around, add
       // or subtract as needed to keep the value correct
-      if ((currentencoderReading-lastencoderReading)<(-(cpr/2))){
-        currentencoderReading += cpr;
+      if ((currentencoderReading-lastencoderReading)<(-(VALS_PER_REV/2))){
+        currentencoderReading += VALS_PER_REV;
       }
  
       encoderReading += currentencoderReading;
-      delay(READ_TIME);
+      delay(MOTOR_SETTLE);
     }
     // Take the average
-    encoderReading = encoderReading / avg;
+    encoderReading = encoderReading / N_AVG;
     // Put it back in range of the 14 bit value
-    if (encoderReading>=cpr){
-      encoderReading-= cpr;
+    if (encoderReading>=VALS_PER_REV){
+      encoderReading-= VALS_PER_REV;
     }
     else if (encoderReading<0){
-      encoderReading+= cpr;
+      encoderReading+= VALS_PER_REV;
     }
 
     fullStepReadings[x] = encoderReading;
     
     // go to next step
-    oneStep();
+    stepIdx = one_step(CW, stepIdx);
   }
   // Once we know everything, we can analyze the data.
   findijStart(fullStepReadings, &iStart, &jStart);
@@ -330,30 +336,30 @@ int calibrate() {
   page_count = 0;
   page_ptr = (const uint8_t*) lookup;
   // Start counting at iStart
-  for (int i = iStart; i < (iStart + spr + 1); i++) {
-    ticks = fullStepReadings[mod((i + 1), spr)] - fullStepReadings[mod((i), spr)];
+  for (int i = iStart; i < (iStart + STEP_PER_REV + 1); i++) {
+    ticks = fullStepReadings[((i + 1) % STEP_PER_REV)] - fullStepReadings[((i) % STEP_PER_REV)];
 
-    if (ticks < -cpr/2) {           //check if current interval wraps over encoder's zero positon
-      ticks += cpr;
+    if (ticks < -VALS_PER_REV/2) {           //check if current interval wraps over encoder's zero positon
+      ticks += VALS_PER_REV;
     }
     if (i == iStart) { //this is an edge case
       // starting at 0, go through the ticks and assign an angle
-      // given that 1 tick = 1 aps
+      // given that 1 tick = 1 VAL_PER_STEP
       // For this case, we only care about the vals between jStart and ticks
       for (int j = jStart; j < (ticks); j++) {
-	      store_lookup(0.001 * mod(1000 * ((aps * i) + ((aps * j ) / float(ticks))), 360000.0));
+	      store_lookup((((VAL_PER_STEP * i) + ((VAL_PER_STEP * j ) / (ticks))) % VALS_PER_REV));
       }
     }
-    else if (i == (iStart + spr)) { //this is an edge case
+    else if (i == (iStart + STEP_PER_REV)) { //this is an edge case
       // this time, we are ending at 0, making sure not to double-count
       // the ones covered in the previous case
       for (int j = 0; j < jStart; j++) {
-	     store_lookup(0.001 * mod(1000 * ((aps * i) + ((aps * j ) / float(ticks))), 360000.0));
+	     store_lookup((((VAL_PER_STEP * i) + ((VAL_PER_STEP * j ) / (ticks))) % VALS_PER_REV));
       }
     }
     else {                        //this is the general case
       for (int j = 0; j < ticks; j++) {
-	      store_lookup(0.001 * mod(1000 * ((aps * i) + ((aps * j ) / float(ticks))), 360000.0));
+	      store_lookup(( ((VAL_PER_STEP * i) + ((VAL_PER_STEP * j ) / (ticks))) % VALS_PER_REV));
       }
     }
   }
@@ -367,14 +373,14 @@ int calibrate() {
 
 
 static int read_angle(int avg) {
-  int prevReading = readEncoder();
-  int encoderReading = readEncoder();
+  int prevReading = encoder_read();
+  int encoderReading = encoder_read();
 
 
-  disableTCInterrupts(); // Ensure interrupts don't move the motor
+  disable_TCInterrupts(); // Ensure interrupts don't move the motor
 
   for (int reading = 0; reading < avg; reading++) {  //average multple readings at each step
-    encoderReading += readEncoder();
+    encoderReading += encoder_read();
     delay(MOTOR_SETTLE);
   }
 

@@ -3,16 +3,16 @@
   DESCRIPTION: This file contains macro definitions and function delcarations for setting up and controlling the motor.
   -----------------------------------------------------------------------------
 */
-
+#include <stdint.h>
 // We want to define this only once
 #ifndef __MOTOR_H__
 #define __MOTOR_H__
   // Function declarations
   void setup_pins();            // Set up pins for motor control
   void stop_motor();            // Park the motor
-  int sine_lookup(int angle);   // Calculate sine from lookup table
-  int one_step(bool dir, int step); // Move the motor one step in the specified direction
-  void output(int theta, int effort); // Move the motor to the set angle
+  int32_t sine_lookup(uint32_t angle);   // Calculate sine from lookup table
+  int32_t one_step(bool dir, int32_t step); // Move the motor one step in the specified direction
+  void output(int32_t theta, int32_t effort); // Move the motor to the set angle
 
   // Macros for quickly writing to GPIO
   #define PIN_1_HIGH() (REG_PORT_OUTSET0 = PORT_PA06)
@@ -43,7 +43,7 @@
   // Create constant parameters for controlling the motor
   #define iMAX    1.5             // While the A4954 driver is rated for 2.0 Amp peak currents, it cannot handle these currents continuously.  Depending on how you operate the Mechaduino, you may be able to safely raise this value; refer to the A4954 datasheet for more info
   #define rSense  0.150           // Sense resistor resistance in ohms
-  #define uMAX  (int)(255/3.3)*(iMAX*10*rSense) // Set the maximum "effort"; (225 duty/3.3 volts) * (iMax amps * rSense ohms * 10) gives us a way to convert from target current to PWM duty cycle
+  #define uMAX    (int32_t)((255/3.3)*(iMAX*10*rSense)) // Set the maximum "effort"; (225 duty/3.3 volts) * (iMax amps * rSense ohms * 10) gives us a way to convert from target current to PWM duty cycle
 
   // Pin numbers
   #define PIN_4    6   // Pin 1,2,3,4 are motor control pins

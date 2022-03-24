@@ -3,13 +3,13 @@
   DESCRIPTION: This file contains macro definitions and function delcarations for interacting with the magnetic rotary encoder.
   -----------------------------------------------------------------------------
 */
-
+#include <stdint.h>
 // We want to define this only once
 #ifndef __MAGNET_H__
 #define __MAGNET_H__
   // Function declarations
   void encoder_setup();
-  int encoder_read();
+  uint16_t encoder_read();
 
   // macro for quickly setting the CS pin (only works if the CS pin is A2)
   #define CHIPSELECT_HIGH() (REG_PORT_OUTSET1 = PORT_PB09)
