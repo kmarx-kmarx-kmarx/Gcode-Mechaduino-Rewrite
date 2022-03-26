@@ -151,7 +151,7 @@ static void findijStart(uint32_t readings[], uint32_t* istart, uint32_t* jstart)
       // when the encoder would read 0
       stepNo = ((readings[i] + j) % VALS_PER_REV);
       if(stepNo==0){
-        // Record the step number and 
+        // Record the step number and offset
         *istart = i;
         *jstart = j;
         return;
@@ -269,7 +269,7 @@ static bool wired_correctly(){
         MagneticEncoder.h: For reading from the encoder
   -----------------------------------------------------------------------------
 */
-int calibrate() {
+int32_t calibrate() {
   uint32_t encoderReading = 0;
   uint32_t currentencoderReading = 0;
   uint32_t lastencoderReading = 0;
@@ -372,18 +372,18 @@ int calibrate() {
 }
 
 
-static int read_angle(int avg) {
-  int prevReading = encoder_read();
-  int encoderReading = encoder_read();
+// static int read_angle(int avg) {
+//   int prevReading = encoder_read();
+//   int encoderReading = encoder_read();
 
 
-  disable_TCInterrupts(); // Ensure interrupts don't move the motor
+//   disable_TCInterrupts(); // Ensure interrupts don't move the motor
 
-  for (int reading = 0; reading < avg; reading++) {  //average multple readings at each step
-    encoderReading += encoder_read();
-    delay(MOTOR_SETTLE);
-  }
+//   for (int reading = 0; reading < avg; reading++) {  //average multple readings at each step
+//     encoderReading += encoder_read();
+//     delay(MOTOR_SETTLE);
+//   }
 
-  // Angle reading is the index of the lookup table
-  return lookup[encoderReading / avg];
-}
+//   // Angle reading is the index of the lookup table
+//   return lookup[encoderReading / avg];
+// }

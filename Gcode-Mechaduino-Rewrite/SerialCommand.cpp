@@ -18,12 +18,10 @@
   INCLUDES:
         Arduino.h:       Built-in utilities
         SerialCommand.h: Contains functions and macros for reading and writing data over Serial.
-        TimeControlInt.h: Contains motor state variables
   -----------------------------------------------------------------------------
 */
 #include <Arduino.h>
 #include "SerialCommand.h"
-#include "TimeControlInt.h"
 
 /*
   -----------------------------------------------------------------------------

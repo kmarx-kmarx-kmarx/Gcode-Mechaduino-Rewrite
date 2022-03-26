@@ -9,4 +9,8 @@
 
   void process_cmd(char command[]);
 
+  // Definitions
+  #define NO_CMD     -9000
+  #define NOT_FOUND  -8000
+
 #endif

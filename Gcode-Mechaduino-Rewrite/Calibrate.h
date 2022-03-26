@@ -7,7 +7,7 @@
 
 #ifndef __CALIB_H__
 #define __CALIB_H__
-  int calibrate();
+  int32_t calibrate();
 
   extern const uint32_t lookup[];
 
