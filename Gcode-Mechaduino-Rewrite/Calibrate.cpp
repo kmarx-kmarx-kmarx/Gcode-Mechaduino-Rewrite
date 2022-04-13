@@ -11,16 +11,19 @@
 
         wired_correctly(): indicates whether the motor was wired correctly
 
+        calib_home(): Find the maximum and minimum x values of the carriage
+
   SHARED VARIABLES: Various variables for tracking the flash data.
 
   GLOBAL VARIABLES: lookup[]: lookup table for encoder-value-to-angle conversions
+                    xmin, xmax: the minimum and maximum x values
 
   INCLUDES:
         MotorCtrl.h: Contains macros and function declarations
         TimeControlInt.h: We need this to turn off the interrupts
         MagneticEncoder.h: For macros and encoder reading functions
         Arduino.h: Has macros and definitions for the board
-        stdint.h: 
+        stdint.h:  Definitions for integer types
   -----------------------------------------------------------------------------
 */
 
@@ -31,6 +34,10 @@
 #include "TimeControlInt.h"
 #include "Calibrate.h"
 #include <Arduino.h>
+
+// Initialize position global variables
+int32_t xmin = 0;
+int32_t xmax = 0;
 
 // Initialize lookup table with 2^14 elements, one for each possible encoder value
 extern const uint32_t __attribute__((__aligned__(256))) lookup[16384] = {};
@@ -371,6 +378,78 @@ int32_t calibrate() {
   return CALIBRATION_SUCCESS;
 }
 
+/*
+  -----------------------------------------------------------------------------
+  DESCRIPTION: calib_home() find the minimum and maximum x values.  
+
+  OPERATION:   We first check to see if the motor is calibrated. If not, we run the calibration routine. 
+
+  ARGUMENTS:   none
+
+  RETURNS:     None
+
+  INPUTS / OUTPUTS: None
+
+  LOCAL VARIABLES: int ticks, stepNo: Track the position along the readings and 
+
+  SHARED VARIABLES: int page_count: This is our index of the page buffer array
+                    int page[]: This is the page buffer array 
+                    void * page_ptr: This void points to the start of the flash page we want to write to
+                    int lookup[]: the lookup table
+
+  GLOBAL VARIABLES: xmin, xmax: the minimum and maximum bounds. Here, we are setting them.
+
+  DEPENDENCIES:
+        MotorCtrl.h:     For interacting with the motor
+        MagneticEncoder.h: For reading from the encoder
+        TimeControlInt.h:  To read the global positioning variables
+  -----------------------------------------------------------------------------
+*/
+void calib_home(){
+  // Check if we need to calibrate
+  if (lookup[0] == 0 && lookup[128] == 0 && lookup[1024] == 0){
+    if(calibrate()==CALIBRATION_FAIL){
+      return;
+    }
+  }
+  // Get initial angle calibration (will return to this later)  
+  // Move as far "in" as possible before hitting a high-effort region
+  // Make this the new 0
+  mode = 'v';            // Velocity mode
+  // Change directions a bit to get the motor moving
+  r = -HOMING_SPEED;
+  enable_TCInterrupts();  // Start moving!
+  delay(MOTOR_SETTLE);
+  r = HOMING_SPEED;      // Move to 0 at HOMING_SPEED
+
+  while(abs(u) < UNLOADED_EFFORT_LIM){
+    delayMicroseconds(IDLE_US); // Idle while waiting for limit to be hit
+  }
+
+  r = -1*HOMING_SPEED/4;          // Move at quarter HOMING_SPEED
+  while(abs(u_f) > UNLOADED_EFFORT_NOM || abs(u_f-u_f_1) > EFFORT_SLOPE_THRESH){
+    delayMicroseconds(IDLE_US); // Idle until we reach nominal effort
+  }
+  r = 0;                          // Stop moving
+  xmin = yw;
+  delay(MOTOR_SETTLE);             // Wait for the motors to settle down
+          
+  // Move "out" as far as possible before hitting a high-effort region
+  // Make this the new upper bound.
+  r = -HOMING_SPEED;
+  while(abs(u_f) < UNLOADED_EFFORT_LIM){
+    delayMicroseconds(IDLE_US); // Idle while waiting for limit to be hit
+  }
+
+  r = 1*HOMING_SPEED/4;          // Move at quarter HOMING_SPEED
+  while(abs(u_f) > UNLOADED_EFFORT_NOM || abs(u_f-u_f_1) > EFFORT_SLOPE_THRESH){
+    delayMicroseconds(IDLE_US); // Idle until we reach nominal effort
+  }
+  r = 0;                          // Stop moving
+  delay(MOTOR_SETTLE);             // Wait for the motors to settle down
+  xmax = yw;
+  return;
+}
 
 // static int read_angle(int avg) {
 //   int prevReading = encoder_read();

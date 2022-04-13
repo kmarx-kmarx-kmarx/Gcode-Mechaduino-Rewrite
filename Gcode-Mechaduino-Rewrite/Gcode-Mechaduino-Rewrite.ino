@@ -81,6 +81,8 @@ void setup()
   // Clear the command buffer
   memset(cmd, 0, COMMAND_SIZE);
 
+  SerialUSB.println("Start");
+
   return;
 }
 
@@ -110,17 +112,12 @@ void setup()
         string.h:     string manipulations
         SerialCommand:read the command, send acknowledgement, and send debug info
   -----------------------------------------------------------------------------
-*/ 
-uint32_t interval = DEBUG_DEFAULT;
-bool debugging = false;
+*/
 bool stopped = false;
 void loop()
 {
-  bool haveCmd = !(cmd[0] == 0); // We have a command if the first character of the command buffer is nonzero
-  bool isValid;                   // Flag for indicating whether the command was valid
-
   // First, we check to see if we should stop.
-  if(haveCmd){
+  if(flags & (1<<CMD_READY)){
     // Create two null-terminated strings, one which is the first 4 characters of command and another which is "M112", the stop command
     char stopCheck[5];
     strncpy(stopCheck, cmd, 4);
@@ -133,22 +130,19 @@ void loop()
       stop_motor();
     }
 
-    // We next check if we are ready for a new command
-    if(flags & (1<<CMD_READY)){
-      // If not stopped, run the command
-      if(!stopped){
-        process_cmd(cmd);
-      }
-      // Clear the command buffer - set it to be all 0
-      memset(cmd, 0, COMMAND_SIZE);
+    // If not stopped, run the command
+    if(!stopped){
+      process_cmd(cmd);
     }
+    // Clear the command buffer - set it to be all 0
+    memset(cmd, 0, COMMAND_SIZE);
   }
   // If we don't have a command, check the serial buffer
   else{
-    // If we do have something in the serial buffer, read it in
+    // If we do have something in the serial buffer, read it in and keep it in the buffer
     if(SerialUSB.available()>0){
-      isValid = read_serial(cmd);
-      send_ack(isValid);
+      read_serial(cmd);
+      send_ack(flags & (1<<CMD_READY));
     }
     // If there is nothing on the serial buffer, request a command
     else{
@@ -156,7 +150,7 @@ void loop()
     }
   }
   // Finally, if we are debugging, send the debug information
-  if(debugging){
-    send_debug(interval);
+  if(flags & (1<<DEBUG_MODE)){
+    send_debug(DEBUG_DEFAULT);
   }
 }

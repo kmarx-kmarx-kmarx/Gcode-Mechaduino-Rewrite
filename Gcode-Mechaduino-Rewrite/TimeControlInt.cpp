@@ -43,6 +43,8 @@ volatile int32_t yw = 0;    // "wrapped" angle (not limited to 0-360)
 volatile int32_t yw_1 = 0;
 volatile int32_t e = 0;     // e = r-y (error)
 volatile int32_t e_1 = 0;   //previous error
+volatile int32_t u_f = 0;     // filtered effort
+volatile int32_t u_f_1 = 0;   // previous filtered effort value
 // Define shared variables
 volatile int32_t y_1 = 0;     // previous measured angle
 volatile int32_t wrap_count = 0; // Number of full revolutions
@@ -231,6 +233,10 @@ void TC5_Handler() {// gets called with CTRL_LOOP_HZ frequency
     u = min(max(u, -uMAX), uMAX);
 
     U = abs(u);
+
+    // IIR filter for u
+    u_f_1 = u_f;
+    u_f += ((fLPFb) * (u - u_f)) / FIXED_PT_SCALE;
 
     //if (abs(e) < 0.1) ledPin_HIGH();    // turn on LED if error is less than 0.1
     //else ledPin_LOW();                  //digitalWrite(ledPin, LOW);

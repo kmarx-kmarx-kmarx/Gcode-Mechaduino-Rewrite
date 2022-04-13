@@ -55,4 +55,13 @@
   #define PIN_1    8
   #define ledPin  13  // Built-in LED
 
+  // Device Parameters (for Poseidon)
+  // Set by the thread
+  #define MM_PER_ROT          2.0
+  #define IN_PER_ROT          0.0787402f
+  // RPM converted to VALS_PER_REV per minute
+  #define DEFAULT_SPEED       (VALS_PER_REV * 10)  // 10 RPM
+  #define MIN_SPEED           (VALS_PER_REV / 2048)// 0.00048828125 RPM
+  #define MAX_SPEED           (VALS_PER_REV * 310) // 310 RPM
+
 #endif

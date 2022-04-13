@@ -18,9 +18,11 @@
   INCLUDES:
         Arduino.h:       Built-in utilities
         SerialCommand.h: Contains functions and macros for reading and writing data over Serial.
+        TimeControlInt.h: Has global variables
   -----------------------------------------------------------------------------
 */
 #include <Arduino.h>
+#include "TimeControlInt.h"
 #include "SerialCommand.h"
 
 /*
@@ -60,13 +62,13 @@
   SHARED VARIABLES: 
         char command[]  The command buffer. This function takes the pointer to the command buffer and writes to the command buffer.
 
-  GLOBAL VARIABLES: None
+  GLOBAL VARIABLES: flags; we set a bit to indicate the command was read successfully
 
   DEPENDENCIES:
         SerialCommand.h: Contains macros for timing.
   -----------------------------------------------------------------------------
 */ 
-bool read_serial(char command[]){
+void read_serial(char command[]){
   char inChar;      // Character being read off the serial buffer
   char sigChar; //
   uint8_t delays = 0;  // Amount of times we have had to wait for the serial buffer to have data
@@ -76,7 +78,7 @@ bool read_serial(char command[]){
   char csumStr[3]; // The checksum is one byte in hexdecimal; we need two characters and then null termination
   int16_t csumRead;
   // Assume the command is valid and reset the command buffer 0
-  bool isValid = true;
+  flags |= (1<<CMD_READY);
   memset(command, 0, COMMAND_SIZE);
 
   // Try to read from the serial buffer until we either time out or finish reading
@@ -86,9 +88,10 @@ bool read_serial(char command[]){
     if(SerialUSB.available()>0){
       // Read the character
       inChar = SerialUSB.read();
+      SerialUSB.print(inChar);
       // First, ensure we don't write beyond our buffer
       if(cmdIdx >= COMMAND_SIZE){
-        isValid = false;
+        flags &= ~(1<<CMD_READY); // Clear the bit to indicate failure
         break;
       }
       // Check the first character
@@ -100,7 +103,7 @@ bool read_serial(char command[]){
         }
         // Otherwise, the command is not valid and exit the loop
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
       }
@@ -110,7 +113,7 @@ bool read_serial(char command[]){
           command[cmdIdx++] = inChar;
         }
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
       }
@@ -125,7 +128,7 @@ bool read_serial(char command[]){
           sigChar = ' ';
         }
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
       }
@@ -146,7 +149,7 @@ bool read_serial(char command[]){
           break;
         }
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
       }
@@ -160,7 +163,7 @@ bool read_serial(char command[]){
           command[cmdIdx++] = inChar;
         }
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
       }
@@ -174,7 +177,7 @@ bool read_serial(char command[]){
           command[cmdIdx++] = inChar;
         }
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
       }
@@ -202,13 +205,13 @@ bool read_serial(char command[]){
             csumCalc &= 0xFF;
           }
           else{
-            isValid = false;
+            flags &= ~(1<<CMD_READY);
             break;
           }
         }
         // If it isn't a space, check if we have already read enough characters
         else if(csumIdx >= 2){
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
         // If it isn't a space and we still want to read characters, check if it's hex
@@ -217,7 +220,7 @@ bool read_serial(char command[]){
         }
         // Otherwise, it's invalid
         else{
-          isValid = false;
+          flags &= ~(1<<CMD_READY);
           break;
         }
 
@@ -230,52 +233,8 @@ bool read_serial(char command[]){
     }
   }
 
-
-  // Read the characters until we hit a "M" or "G"
-  while(SerialUSB.available()>0){
-    inChar = SerialUSB.read();
-
-    if(inChar == 'M' || inChar == 'G'){
-      break;
-    }
-  }
-  // At this point, inChar is either 'A', the default value (the command was invalid), 'M' (we have a M command), or 'G' (we have a G command)
-  if(inChar == 'M' || inChar == 'G'){
-    // If it's M or G, start reading in the rest of the command.
-    // Get the first byte stored into our string
-    command[0] = inChar;
-    // While we haven't exceeded our delay limit...
-    while(delays < DELAY_COUNT){
-      // Check if there's any data available
-      if(SerialUSB.available()>0){
-        // Read in the new character
-        inChar = SerialUSB.read();
-        // Check - is it end of line?
-        if(END_OF_LINE(inChar)){
-          // We are done reading, exit the loop. Everything after the newline is considered to be trash.
-          // Ending with a newline ensures the command was valid
-          isValid = true;
-          break;
-        }
-        else if(cmdIdx > (COMMAND_SIZE-1)){
-          // If a command is too long, we might have missed something important. We will signal the command is bad. We want to exit the while loop here
-          break; 
-        }
-        else{
-          // Otherwise, read in the character
-          command[cmdIdx++] = inChar;
-        }
-      }
-      else{
-        // If we don't have any new bytes available, wait a little bit in case any more come in
-        delays++;
-        delayMicroseconds(DELAY_TIME);
-      }
-    }
-  }
-
   // If not valid, clear the first character of the command to indicate it is not valid
-  if(!isValid){
+  if(!(flags & (1<<CMD_READY))){
     command[0] = 0;
   }
 
@@ -284,8 +243,9 @@ bool read_serial(char command[]){
 
   // Clear the buffer (there's nothing more to read)
   SerialUSB.flush();
+  SerialUSB.println(command);
 
-  return isValid;
+  return;
 }
 
 /*

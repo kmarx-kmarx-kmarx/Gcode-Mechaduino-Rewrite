@@ -26,7 +26,7 @@
 
   #define BAUDRATE  115200    // Set the baud rate
 
-  bool read_serial(char command[]);
+  void read_serial(char command[]);
   void send_ack(bool isValid);
   void request_new();
   void send_debug(int interval);

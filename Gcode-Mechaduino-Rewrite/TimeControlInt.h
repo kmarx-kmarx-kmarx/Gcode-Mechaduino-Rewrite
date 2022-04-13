@@ -21,6 +21,23 @@
   // Initialize flags and define the bits
   extern volatile int32_t flags;
   extern volatile char mode;
+  extern volatile int32_t u_f;
+  extern volatile int32_t u_f_1;
+  // Define flags bit map
+  #define COMMAND_SHIFT  (31-3) // Reserve 3 bits at the top for 2^3 different commands
+  #define COMMAND_MASK   (0b111 << COMMAND_SHIFT) // Used to filter out the other bits
+  #define NULL_COMMAND    0b000 // Nothing
+  #define STOP_COMMAND    0b111 // Halt
+  #define MOVE_COMMAND    0b001 // Rapid move
+  #define LINEAR_COMMAND  0b010 // Linear move
+  #define DWELL_COMMAND   0b011 // Dwell
+  #define CMD_READY      0   // Set this bit when there is a command in the command buffer ready to execute
+  #define CMD_INVALID    1   // Set this bit if the command was read properly but it is invalid for some other reason
+  #define DEBUG_MODE     2   // Set if debugging, clear if you don't want debug messages
+  #define POS_ABSOLUTE   3   // Set if absolute positioning, clear if relative
+  #define UNITS_MM       4   // Set if in units millimeters, clear if inches
+  #define IN_PROGRESS    5   // Set if a command is currently in progress
+  
 
   // Initialize other control global variables
   extern volatile uint32_t U;  //control effort (abs)
@@ -67,5 +84,10 @@
   #define vKd       0.02 * FIXED_PT_SCALE        // differential error multiplier
   // Proportional term parameters
   #define vKp       0.25 * FIXED_PT_SCALE         // proportional error multiplier
+  
+  // Filter term parameters
+  #define fLPF     0.5 // Break frequency in Hz
+  #define fLFPa    (FIXED_PT_SCALE *  exp(-2*PI*vLPF/TARG_CTRL_LOOP_HZ))
+  #define fLPFb    FIXED_PT_SCALE - vLPFa
 
 #endif
