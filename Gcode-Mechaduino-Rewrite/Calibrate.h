@@ -7,8 +7,6 @@
 
 #ifndef __CALIB_H__
 #define __CALIB_H__
-
-
   int32_t calibrate();
   void calib_home();
 

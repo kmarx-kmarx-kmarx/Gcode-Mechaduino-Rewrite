@@ -371,7 +371,9 @@ void process_cmd(char command[]){
       break;
     default:
       flags |= (1 << CMD_INVALID);
+      break;
   }
+  // We processed the command so clear the command ready flag
+  flags &= ~(1<<CMD_READY);
   return;
 }
-

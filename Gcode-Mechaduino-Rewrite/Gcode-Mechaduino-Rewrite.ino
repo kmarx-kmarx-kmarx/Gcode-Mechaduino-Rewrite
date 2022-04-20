@@ -31,7 +31,7 @@
         ProcessCmd.h      Read from the command buffer and execute the command
         MotorCtrl.h       Low-level motor control interface functions
         string.h          For array operations
-  -----------------------------------------------------------------------------
+  --------------------------------------  ---------------------------------------
 */
 
 #include "SerialCommand.h"
@@ -81,8 +81,6 @@ void setup()
   // Clear the command buffer
   memset(cmd, 0, COMMAND_SIZE);
 
-  SerialUSB.println("Start");
-
   return;
 }
 
@@ -114,10 +112,12 @@ void setup()
   -----------------------------------------------------------------------------
 */
 bool stopped = false;
+bool requested = false;
 void loop()
 {
   // First, we check to see if we should stop.
   if(flags & (1<<CMD_READY)){
+    requested = false;
     // Create two null-terminated strings, one which is the first 4 characters of command and another which is "M112", the stop command
     char stopCheck[5];
     strncpy(stopCheck, cmd, 4);
@@ -146,7 +146,10 @@ void loop()
     }
     // If there is nothing on the serial buffer, request a command
     else{
-      request_new();
+      if(!requested){
+        request_new();
+        requested = true;
+      }
     }
   }
   // Finally, if we are debugging, send the debug information

@@ -58,7 +58,7 @@
   #define CTRL_LOOP_PERIOD     (uint32_t)(BASECLK / TARG_CTRL_LOOP_HZ)
   // Frequency and Period for the command loop
   #define CMD_LOOP_HZ          500
-  #define CMD_LOOP_PERIOD      (uint32_t)(BASECLK / CMD_LOOP_HZ)
+  #define CMD_LOOP_PERIOD      (uint32_t)(BASECLK / (2*CMD_LOOP_HZ)) // divide by 2 to account for clock presale
   // PID loop parameters 
   #define PA                   VAL_PER_STEP       // Target position is 1 step away from current position. Can increase for faster repsonse
   #define ITERM_MAX            (200 * VALS_PER_REV / 360) // Integral term winding limit

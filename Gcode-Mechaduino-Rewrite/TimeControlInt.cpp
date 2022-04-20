@@ -89,6 +89,9 @@ void setup_TCInterrupts() {
   TC5->COUNT16.CC[0].reg = CTRL_LOOP_PERIOD;
   WAIT_TC16_REGS_SYNC(TC5)
 
+  NVIC_SetPriority(TC5_IRQn, 0);              //Set interrupt priority
+  NVIC_EnableIRQ(TC5_IRQn);                    // Enable InterruptVector
+
   TC5->COUNT16.INTENSET.reg = 0;              // disable all interrupts
   TC5->COUNT16.INTENSET.bit.OVF = 1;          // enable overfollow
   TC5->COUNT16.INTENSET.bit.MC0 = 1;         // enable compare match to CC0
@@ -100,18 +103,17 @@ void setup_TCInterrupts() {
   WAIT_TC16_REGS_SYNC(TC4)
   TC4->COUNT16.CTRLA.reg |= TC_CTRLA_WAVEGEN_MFRQ; // Set TC as normal Normal Frq
   WAIT_TC16_REGS_SYNC(TC4)
-  TC4->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV1;   // Set perscaler; 46.875kHz
+  TC4->COUNT16.CTRLA.reg |= TC_CTRLA_PRESCALER_DIV2;   // Set perscaler; 46.875kHz/2
   WAIT_TC16_REGS_SYNC(TC4)
   TC4->COUNT16.CC[0].reg = CMD_LOOP_PERIOD; 
   WAIT_TC16_REGS_SYNC(TC4)
   TC4->COUNT16.INTENSET.reg = 0;              // disable all interrupts
   TC4->COUNT16.INTENSET.bit.OVF = 1;          // enable overfollow
   TC4->COUNT16.INTENSET.bit.MC0 = 1;         // enable compare match to CC0
+
+  
   NVIC_SetPriority(TC4_IRQn, 1);              //Set interrupt priority
   NVIC_EnableIRQ(TC4_IRQn);                  // Enable InterruptVector
-  NVIC_SetPriority(TC5_IRQn, 0);              //Set interrupt priority
-  // Enable InterruptVector
-  NVIC_EnableIRQ(TC5_IRQn);
 
   return;
 }
@@ -249,4 +251,9 @@ void TC5_Handler() {// gets called with CTRL_LOOP_HZ frequency
   yw_1 = yw;
   
   TC5->COUNT16.INTFLAG.bit.OVF = 1;    // writing a one clears the flag ovf flag
+}
+
+void TC4_Handler() {
+   TC4->COUNT16.INTFLAG.bit.OVF = 1;
+   return; 
 }

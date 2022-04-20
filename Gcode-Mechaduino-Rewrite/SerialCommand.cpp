@@ -88,7 +88,6 @@ void read_serial(char command[]){
     if(SerialUSB.available()>0){
       // Read the character
       inChar = SerialUSB.read();
-      SerialUSB.print(inChar);
       // First, ensure we don't write beyond our buffer
       if(cmdIdx >= COMMAND_SIZE){
         flags &= ~(1<<CMD_READY); // Clear the bit to indicate failure
@@ -315,33 +314,35 @@ void send_debug(int interval){
   //    2) position in degrees
   //    3) effort 
   //    4) setpoint 
-  uint32_t time = millis(); // get the time
+  uint32_t t_send = millis(); // get the time
   // copy all these values into byte array representations
   // note: all these are 4 byte values
-  uint8_t * timebytes = (uint8_t *) &time;
+  uint8_t * timebytes = (uint8_t *) &t_send;
   uint8_t * flagbytes = (uint8_t *) &flags;
   uint8_t * posbytes = (uint8_t *) &yw;
   uint8_t * effbytes = (uint8_t *) &u;
   uint8_t * setbytes = (uint8_t *) &r;
   // put them into an array for easier manipulation
-  uint8_t * data[] = {timebytes, flagbytes, posbytes, effbytes, setbytes};
-
+  uint8_t * info[] = {timebytes, flagbytes, posbytes, effbytes, setbytes};
+  
   // We check the time
-  if(prevDebugTime + interval > time){
-    prevDebugTime = time;
+  uint32_t corrected_time = prevDebugTime - (prevDebugTime % interval);
+  String outs = "";
+  if(millis() - corrected_time > interval){
+    prevDebugTime = millis();
     // Next, write all our bytes as hex for easy manipulation
-    for(int i = 0; i < (sizeof(data) / sizeof(data[0])); i++){
-      uint8_t * ptr = data[i];
+    for(int i = 0; i < (sizeof(info) / sizeof(info[0])); i++){
+      uint8_t * ptr = info[i];
       for(int j = 0; j < sizeof(ptr); j++){
         char hexCar[2];
         sprintf(hexCar, "%02X", ptr[j]);
-        SerialUSB.print(hexCar);
+        outs += hexCar;
       }
-      if(i < ((sizeof(data) / sizeof(data[0]))-1)){
-        SerialUSB.print(",");
+      if(i < ((sizeof(info) / sizeof(info[0]))-1)){
+        outs += ",";
       }
     }
-    SerialUSB.print("\n");
+    SerialUSB.print(outs + "\n");
   }
   return;
 }
