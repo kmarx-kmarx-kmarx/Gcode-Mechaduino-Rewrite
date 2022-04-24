@@ -299,7 +299,7 @@ int32_t calibrate() {
 
   
   //step through all full step positions, recording their encoder readings
-  for (int x = 0; x < VALS_PER_REV; x++) {     
+  for (int x = 0; x < STEP_PER_REV; x++) {     
     encoderReading = 0;               // init. as 0 for averages
     delay(MOTOR_SETTLE);              //moving too fast may not give accurate readings.  Motor needs time to settle after each step.
     lastencoderReading = encoder_read();
@@ -331,6 +331,7 @@ int32_t calibrate() {
     // go to next step
     stepIdx = one_step(CW, stepIdx);
   }
+  SerialUSB.println("Done reading");
   // Once we know everything, we can analyze the data.
   findijStart(fullStepReadings, &iStart, &jStart);
 

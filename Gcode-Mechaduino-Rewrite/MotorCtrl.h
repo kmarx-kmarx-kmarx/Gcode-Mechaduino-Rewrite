@@ -8,7 +8,7 @@
 #ifndef __MOTOR_H__
 #define __MOTOR_H__
   // Function declarations
-  int32_t mod(int32_t xMod, int32_t mMod); // modulo function
+  uint32_t mod(int32_t xMod, int32_t mMod); // modulo function
   void setup_pins();            // Set up pins for motor control
   void stop_motor();            // Park the motor
   int32_t sine_lookup(uint32_t angle);   // Calculate sine from lookup table

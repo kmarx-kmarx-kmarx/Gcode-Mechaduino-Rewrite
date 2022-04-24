@@ -73,10 +73,10 @@ void setup()
 
   setup_pins();         // configure pinouts for controlling the motor
   setup_TCInterrupts(); // configure controller timed interrupts
-  encoder_setup();          // Sets up SPI for communicating with encoder
+  encoder_setup();      // Sets up SPI for communicating with encoder
 
   // Enable the timed interrupts
-  enable_TCInterrupts();
+  // enable_TCInterrupts();
 
   // Clear the command buffer
   memset(cmd, 0, COMMAND_SIZE);

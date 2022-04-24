@@ -124,6 +124,12 @@ void process_m(char instruction[]){
       else{
         // Otherwise, we are debugging
         flags |= (1<<DEBUG_MODE);
+        // Print out our calibration table
+        for(uint32_t i = 0; i < 16384; i++){
+          SerialUSB.print(i);
+          SerialUSB.print(", ");
+          SerialUSB.println(lookup[i]);
+        }
       }
       break;
     default:
@@ -302,11 +308,14 @@ void process_g(char instruction[]){
       xmin = yw;
       break;  
     case HOME:
-      // This too is straightforward to implement so we are doing it here.
-      // If no parameters are given, calibrate position and go home.
-      // If axes are given, home the given axes without calibrating position.
-      // Only the x-axis is implemented; search for x
-      if(search_code('X', instruction) == NOT_FOUND){
+      // Check if we want to do a full calibration - uses "A" code
+      if(search_code('A', instruction) != NOT_FOUND){
+        xmin = 0;
+        xmax = 0;
+        calibrate();
+        calib_home();
+      }
+      if((search_code('X', instruction) == NOT_FOUND) || (xmin != 0 || xmax != 0)){
         // Do the full calibration
         if(U > UNLOADED_EFFORT_LIM){
           return; // Can't home if effort's too high
@@ -315,10 +324,8 @@ void process_g(char instruction[]){
         calib_home();        
       }
       // Then, if calibrated, move it home at full speed.
-      if(xmin != 0 || xmax != 0){
-        mode = 'x';
-        r = xmin;
-      }
+      mode = 'x';
+      r = xmin;
       break;
     case DWELL:
       code_f = search_code('P', instruction);

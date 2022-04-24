@@ -59,7 +59,7 @@ const uint16_t SINETABLE[] = {0, 13, 25, 38, 50, 63, 75, 88, 100, 113, 126, 138,
   DEPENDENCIES: None
   -----------------------------------------------------------------------------
 */ 
-int32_t mod(int32_t xMod, int32_t mMod) {
+uint32_t mod(int32_t xMod, int32_t mMod) {
   return (xMod % mMod + mMod) % mMod;
 }
 
@@ -177,13 +177,13 @@ int32_t sine_lookup(uint32_t angle){
       return(SINETABLE[angle]);
       break;
     case 1:
-      return(SINETABLE[QUARTER_TURN - angle]);
+      return(SINETABLE[QUARTER_TURN - angle - 1]);
       break;
     case 2:
       return(-SINETABLE[angle]);
       break;
     default:
-      return(-SINETABLE[QUARTER_TURN - angle]);
+      return(-SINETABLE[QUARTER_TURN - angle - 1]);
   }
 }
 
@@ -219,8 +219,8 @@ int32_t sine_lookup(uint32_t angle){
 void output(int32_t theta, int32_t effort) {
   uint32_t angle_1;
   uint32_t angle_2;
-  uint32_t v_coil_A;
-  uint32_t v_coil_B;
+  int32_t v_coil_A;
+  int32_t v_coil_B;
   int32_t sin_coil_A;
   int32_t sin_coil_B;
   const int32_t phase_multiplier = STEP_PER_REV / 4;
@@ -235,6 +235,25 @@ void output(int32_t theta, int32_t effort) {
   // Multiply by effort and then divide by 2^16 (max value in sine lookup) to get correct PWM
   v_coil_A = ((effort * sin_coil_A)>>16);
   v_coil_B = ((effort * sin_coil_B)>>16);
+//  SerialUSB.print(theta);
+//  SerialUSB.print(",");
+//  SerialUSB.print(effort);
+//  SerialUSB.print(",");
+//  SerialUSB.print(phase_multiplier * theta);
+//  SerialUSB.print(",");
+//  SerialUSB.print((phase_multiplier * theta) + QUARTER_TURN);
+//  SerialUSB.print(",");
+//  SerialUSB.print(angle_1);
+//  SerialUSB.print(",");
+//  SerialUSB.print(angle_2);
+//  SerialUSB.print(",");
+//  SerialUSB.print(sin_coil_A);
+//  SerialUSB.print(",");
+//  SerialUSB.print(sin_coil_B);
+//  SerialUSB.print(",");
+//  SerialUSB.print(v_coil_A);
+//  SerialUSB.print(",");
+//  SerialUSB.println(v_coil_B);
 
   analogFastWrite(VREF_1, abs(v_coil_A));
   analogFastWrite(VREF_2, abs(v_coil_B));
