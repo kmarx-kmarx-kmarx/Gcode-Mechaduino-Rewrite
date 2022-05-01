@@ -18,11 +18,18 @@
   void enable_TCInterrupts();
   void disable_TCInterrupts();
 
-  // Initialize flags and define the bits
-  extern volatile int32_t flags;
-  extern volatile char mode;
-  extern volatile int32_t u_f;
-  extern volatile int32_t u_f_1;
+  // Initialize global variables for controlling motor operation
+  extern volatile int32_t flags; // Flags, misc. instruction commands
+  extern volatile char mode;     // Mode: either positioning(x), velocity (v), or park (neither v nor x)
+  extern volatile int32_t u_f;   // IIR-filtered "effort". Filter cutoff freq defined by fLPF
+  extern volatile int32_t u_f_1; // The previous value of u_f
+  extern volatile int32_t set;   // setpoint, the target position.
+  extern volatile int32_t ctrl_start;   // start point of some operation
+  extern volatile int32_t ctrl_end;     // end point of some operation  
+
+  // Initialize precomputed velocity table
+  #define N_ELEM  256
+  extern volatile int32_t precalculated_v[N_ELEM];
   // Define flags bit map
   #define COMMAND_SHIFT  (31-3) // Reserve 3 bits at the top for 2^3 different commands
   #define COMMAND_MASK   (0b111 << COMMAND_SHIFT) // Used to filter out the other bits
@@ -37,6 +44,9 @@
   #define POS_ABSOLUTE   3   // Set if absolute positioning, clear if relative
   #define UNITS_MM       4   // Set if in units millimeters, clear if inches
   #define IN_PROGRESS    5   // Set if a command is currently in progress
+
+  // Constants
+  #define DIST_THRESH   4*MICROSTEPS // If we are within 4 microsteps of our target, we have hit our target
   
 
   // Initialize other control global variables
@@ -49,7 +59,6 @@
   extern volatile int32_t yw_1; // previous wrapped measured angle
   extern volatile int32_t e;  // e = r-y (error)
   extern volatile int32_t e_1;  // previous error
-  #define CMD_READY 0
   
   // Define constants
   // Frequency and Period for the control loop

@@ -1,7 +1,7 @@
 /*
   -----------------------------------------------------------------------------
   DESCRIPTION: This file contains the functions necessary translate serial commands to actions for the motor.
-        
+
 
   SHARED VARIABLES: float feedrate: the speed of the movement in inches or mm per minute
 
@@ -35,7 +35,7 @@ volatile float feedrate = 0;
 
   RETURNS: float code, the code after the character.
 
-  LOCAL VARIABLES: 
+  LOCAL VARIABLES:
         temp[CODE_LEN]: character array holding the code
 
   SHARED VARIABLES: None
@@ -45,7 +45,7 @@ volatile float feedrate = 0;
   DEPENDENCIES:
         SerialCommand.h: Contains macros for timing.
   -----------------------------------------------------------------------------
-*/ 
+*/
 float search_code(char key, char instruction[])
 {
   // Temp char string for holding the code
@@ -53,12 +53,12 @@ float search_code(char key, char instruction[])
   char temp[CODE_LEN] = "";
 
   // Search through the string
-  for (int i=0; i < COMMAND_SIZE; i++){
+  for (int i = 0; i < COMMAND_SIZE; i++) {
     // When the key is found, search through the following characters
-    if (instruction[i] == key){
-      i++;      
+    if (instruction[i] == key) {
+      i++;
       int k = 0;
-      while (i < COMMAND_SIZE && k < CODE_LEN){
+      while (i < COMMAND_SIZE && k < CODE_LEN) {
         // If the character is a space, we are done reading. We can expect a space because SerialCommand.cpp ensures the command is formatted properly
         if (instruction[i] == ' ')
           break;
@@ -68,7 +68,7 @@ float search_code(char key, char instruction[])
         k++;
       }
       // Return the string turned into a float
-      if(temp == ""){
+      if (temp == "") {
         // Return NO_CMD if there is no command
         return NO_CMD;
       }
@@ -83,49 +83,49 @@ float search_code(char key, char instruction[])
   -----------------------------------------------------------------------------
   DESCRIPTION: process_m(char instruction[]) executes the m code. M codes typically change the settings on the device. M112, e-stop, is handled in main
 
-  OPERATION:   We read the integer after 'M' and go through a lookup table to see what to do. Then, the command is executed.
+  OPERATION:   We read the integer after 'M' and go through a lookup switch statement to see what to do. Then, the command is executed.
 
   ARGUMENTS: char command[]; the pointer to the command buffer array.
 
   RETURNS: None
 
-  LOCAL VARIABLES: 
+  LOCAL VARIABLES:
         code_f, code_i: The value we searched for
 
 
   SHARED VARIABLES: None
 
-  GLOBAL VARIABLES: 
+  GLOBAL VARIABLES:
         flags: we change the global flags to set parameters
 
   DEPENDENCIES:
         ProcessCmd.h: Contains macros.
         TimeControlInt.h: For accessing flags
   -----------------------------------------------------------------------------
-*/ 
-void process_m(char instruction[]){
+*/
+void process_m(char instruction[]) {
   float code_f;          // For managing the readings
   code_f = search_code('M', instruction);
   int32_t code_i = code_f; // Convert from float to int so we can use it in the switch statement
 
-  switch(code_i){
+  switch (code_i) {
     case NO_CMD:
       break;
 
     case DEBUG:
       code_f = search_code('S', instruction);
-      if(code_f == NOT_FOUND){
+      if (code_f == NOT_FOUND) {
         return;
       }
-      else if(code_f == 0){
+      else if (code_f == 0) {
         // If S0, turn off debugging mode
-        flags &= ~(1<<DEBUG_MODE);
+        flags &= ~(1 << DEBUG_MODE);
       }
-      else{
+      else {
         // Otherwise, we are debugging
-        flags |= (1<<DEBUG_MODE);
+        flags |= (1 << DEBUG_MODE);
         // Print out our calibration table
-        for(uint32_t i = 0; i < 16384; i++){
+        for (uint32_t i = 0; i < 16384; i++) {
           SerialUSB.print(i);
           SerialUSB.print(", ");
           SerialUSB.println(lookup[i]);
@@ -134,7 +134,7 @@ void process_m(char instruction[]){
       break;
     default:
       break;
-    }
+  }
   return;
 }
 
@@ -152,7 +152,7 @@ void process_m(char instruction[]){
 
   SHARED VARIABLES: None
 
-  GLOBAL VARIABLES: 
+  GLOBAL VARIABLES:
         flags: check which unit we are using
 
   DEPENDENCIES:
@@ -160,14 +160,14 @@ void process_m(char instruction[]){
 
   -----------------------------------------------------------------------------
 */
-int32_t interpolate_pos(float target){
+int32_t interpolate_pos(float target) {
   // Convert the target position in millimeters to the target degree rotation
   int32_t result;
-  if(flags & 1<<UNITS_MM){
-    result = (int32_t)(target * ((float)VALS_PER_REV/((float)MM_PER_ROT)));
+  if (flags & 1 << UNITS_MM) {
+    result = (int32_t)(target * ((float)VALS_PER_REV / ((float)MM_PER_ROT)));
   }
-  else{
-    result = (int32_t)(target * ((float)VALS_PER_REV/((float)IN_PER_ROT)));
+  else {
+    result = (int32_t)(target * ((float)VALS_PER_REV / ((float)IN_PER_ROT)));
   }
   return result;
 }
@@ -193,7 +193,7 @@ int32_t interpolate_pos(float target){
 
   -----------------------------------------------------------------------------
 */
-int32_t bound_pos(int32_t target){
+int32_t bound_pos(int32_t target) {
   // Bound the target position between xmin and xmax
   int32_t result;
 
@@ -204,65 +204,136 @@ int32_t bound_pos(int32_t target){
 
 /*
   -----------------------------------------------------------------------------
+  DESCRIPTION: find_target converts our input setpoint to an actual position along the path.
+
+  OPERATION:   We check if we are in absolute or relative mode. In absolute mode, we subtract from xmax, our home position, to find our new position but in relative mode we subtract from our current position to get our new position.
+
+  ARGUMENTS:   int32_t pos, the position in degrees we want to move
+               int32_t x_init, the current position in degrees
+
+  RETURNS:     int32_t result, the setpoint of our target position
+
+  LOCAL VARIABLES: int32_t result, for storing the result
+
+  SHARED VARIABLES: None
+
+  GLOBAL VARIABLES:
+    xmax:        from calibrating; we need to know where home is to use it as a reference
+
+  INPUTS/OUTPUTS: None
+
+  DEPENDENCIES:
+        TimeControlInt.h        for flag macros
+        Calibrate.h:            For xmax calibration values.
+  -----------------------------------------------------------------------------
+*/
+int32_t find_target(int32_t pos, int32_t x_init) {
+  int32_t result;
+  if (flags & (1 << POS_ABSOLUTE)) {
+    // If doing absolute positioning, use home as reference point
+    result = xmax - pos;
+  }
+  else {
+    // Else, use current position as reference
+    result = x_init - pos;
+  }
+
+  return result;
+}
+
+/*
+  -----------------------------------------------------------------------------
+  DESCRIPTION: linear_move_action takes a feedrate and target position and precalucaltes a velocity-over-position lookup table. It then sets the global variables to execute the move.
+
+  OPERATION:   We first calculate our initial and final positions. We next take our initial and final feedrates and interpolate them as functions of position. It would create less error to recalculate the velocity at every position every iteration loop but this is too slow. Precomputing a velocity at a function of distance is good enough, runs faster, and is more resistant to errors.
+
+  ARGUMENTS:   float setpoint, the target position entered by the user
+               float fr, the end feedrate entered by the user
+
+  RETURNS:     None
+
+  LOCAL VARIABLES: int32_t result, for storing the result
+
+  SHARED VARIABLES: None
+
+  GLOBAL VARIABLES:
+    xmax:        from calibrating; we need to know where home is to use it as a reference
+
+  INPUTS/OUTPUTS: None
+
+  DEPENDENCIES:
+        TimeControlInt.h        for flag macros
+        Calibrate.h:            For xmax calibration values.
+  -----------------------------------------------------------------------------
+*/
+void linear_move_action(float setpoint, float fr) {
+  int32_t f_start, f_end;
+
+  if (fr == NOT_FOUND) { // If no feedrate given, end feedrate will be the same as start feedrate
+    fr = feedrate;
+  }
+
+  
+
+  feedrate = fr; // update feedrate
+  return;
+}
+
+
+/*
+  -----------------------------------------------------------------------------
   DESCRIPTION: process_g(char instruction[]) executes the g code. This involves setting flags which either change the device settings or set the motor to move.
 
-  OPERATION:   We read the integer after 'G' and go through a lookup table to see what to do. Then, the command is executed.
+  OPERATION:   We read the integer after 'G' and go through a lookup switch statement to see what to do. Then, the command is executed.
 
   ARGUMENTS: char command[]; the pointer to the command buffer array.
 
   RETURNS: None
 
-  LOCAL VARIABLES: 
+  LOCAL VARIABLES:
         code_f, code_i: The value we searched for
 
 
-  SHARED VARIABLES: None
+  SHARED VARIABLES:
+        feedrate:
 
-  GLOBAL VARIABLES: 
+  GLOBAL VARIABLES:
         flags: we change the global flags to set parameters
-        feedrate: 
 
   DEPENDENCIES:
         ProcessCmd.h: Contains macros.
-        TimeControlInt.h: Contains global vairables 
+        TimeControlInt.h: Contains global vairables
 
   -----------------------------------------------------------------------------
-*/ 
-void process_g(char instruction[]){
+*/
+void process_g(char instruction[]) {
   float code_f, code_f2;          // For managing the readings
   code_f = search_code('G', instruction);
   int code_i = code_f; // Convert from float to int so we can use it in the switch statement
   int32_t target;
 
-  switch(code_i){
+  switch (code_i) {
     case NO_CMD:
       break;
 
     case RAPID_MOV:
       // Move to target point at maximum feedrate
       code_f = search_code('X', instruction);
-      if(code_f == NOT_FOUND){
+      if (code_f == NOT_FOUND) {
         return;
       }
-      // Convert the reading from 
+      // Convert the reading from inches/mm to rotation
       target = interpolate_pos(code_f);
+      // Find target position
+      target = find_target(target, yw);
 
-      if(flags & 1<<POS_ABSOLUTE){
-        // If doing absolute positioning, use home as reference point
-        target = xmin - target;
-      }
-      else{
-        // Else, add on to current position
-        target = yw - target;
-      }
-      
       // wait until we are no longer IN_PROGRESS before starting the new command
-      while(flags & 1<<IN_PROGRESS){
+      while (flags & 1 << IN_PROGRESS) {
         delayMicroseconds(CHECK_TIME_US);
       }
       mode = 'x';
-      flags |= 1<<IN_PROGRESS;
-      flags |= MOVE_COMMAND<<COMMAND_SHIFT;
+      flags |= 1 << IN_PROGRESS;
+      flags |= MOVE_COMMAND << COMMAND_SHIFT;
       // Keep output position within boundaries
       r = bound_pos(target);
       break;
@@ -271,76 +342,78 @@ void process_g(char instruction[]){
       // doing any movement. This occurs when there is no X command.
       code_f = search_code('F', instruction);
       code_f2 = search_code('X', instruction);
-      if(code_f2 == NOT_FOUND){
+
+      if (code_f2 == NOT_FOUND) {
         // If no x position is given, update the feedrate and return.
-        if(code_f != NOT_FOUND){
+        if (code_f != NOT_FOUND) {
           feedrate = code_f;
         }
-        return;
+        break;
       }
-      // Otherwise, we have something like "G1 Xxxx" or "G1 Xxxx Fxxx"
-      // Hop into a function to do this
-      //linear_move_action(reading_x, reading_misc);
+      else {
+        // Otherwise, we have something like "G1 Xxxx" or "G1 Xxxx Fxxx"
+        // Hop into a function to do this
+        linear_move_action(code_f2, code_f);
+      }
       break;
 
     case SET_ABS:
       // Set absolute positioning
-      flags |= 1<<POS_ABSOLUTE;
+      flags |= 1 << POS_ABSOLUTE;
       break;
 
-    case SET_REL:  
+    case SET_REL:
       // Set relative positioning
-      flags &= ~(1<<POS_ABSOLUTE);
+      flags &= ~(1 << POS_ABSOLUTE);
       break;
 
     case CHANGE_UNIT_IN:
       // Change units to inches
-      flags &= ~(1<<UNITS_MM);
+      flags &= ~(1 << UNITS_MM);
       break;
 
     case CHANGE_UNIT_MM:
       // Change units to mm
-      flags |= 1<<UNITS_MM;
+      flags |= 1 << UNITS_MM;
       break;
 
     case SET_HOME:
       // Set the current location to home
       xmin = yw;
-      break;  
+      break;
+
     case HOME:
       // Check if we want to do a full calibration - uses "A" code
-      if(search_code('A', instruction) != NOT_FOUND){
+      if (search_code('A', instruction) != NOT_FOUND) {
         xmin = 0;
         xmax = 0;
         calibrate();
         calib_home();
       }
-      if((search_code('X', instruction) == NOT_FOUND) || (xmin != 0 || xmax != 0)){
+      if ((search_code('X', instruction) == NOT_FOUND) || (xmin != 0 || xmax != 0)) {
         // Do the full calibration
-        if(U > UNLOADED_EFFORT_LIM){
-          return; // Can't home if effort's too high
+        if (U > UNLOADED_EFFORT_LIM) {
+          break; // Can't home if effort's too high
         }
         // Run position calibration and home
-        calib_home();        
+        calib_home();
       }
       // Then, if calibrated, move it home at full speed.
       mode = 'x';
       r = xmin;
       break;
+
     case DWELL:
       code_f = search_code('P', instruction);
-      if(code_f != NOT_FOUND){
-        // Set global variables with timing info
-        // and the command that we are doing
-        target = code_f;
-        //data1 = millis();
-        flags |= 1<<IN_PROGRESS;
-        flags |= DWELL_COMMAND<<COMMAND_SHIFT;
-      }
-      else{
-        ;
+      if (code_f != NOT_FOUND) {
+        // Set global variables with timing info and the command that we are doing
+        ctrl_end = code_f;
+        ctrl_start = millis();
+        flags |= 1 << IN_PROGRESS;
+        flags |= DWELL_COMMAND << COMMAND_SHIFT;
       }
       break;
+
     default:
       break;
   }
@@ -364,12 +437,12 @@ void process_g(char instruction[]){
   GLOBAL VARIABLES: Flags; we set a bit to indicate whether the command was read successfully
 
   DEPENDENCIES: None
-        
+
   -----------------------------------------------------------------------------
-*/ 
-void process_cmd(char command[]){
+*/
+void process_cmd(char command[]) {
   char cmdType = command[0];
-  switch(cmdType){
+  switch (cmdType) {
     case 'M': // M codes and G codes have to be processed separately
       process_m(command);
       break;
@@ -381,6 +454,6 @@ void process_cmd(char command[]){
       break;
   }
   // We processed the command so clear the command ready flag
-  flags &= ~(1<<CMD_READY);
+  flags &= ~(1 << CMD_READY);
   return;
 }

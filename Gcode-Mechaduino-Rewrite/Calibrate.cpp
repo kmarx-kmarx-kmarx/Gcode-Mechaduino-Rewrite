@@ -383,27 +383,25 @@ int32_t calibrate() {
   -----------------------------------------------------------------------------
   DESCRIPTION: calib_home() find the minimum and maximum x values.  
 
-  OPERATION:   We first check to see if the motor is calibrated. If not, we run the calibration routine. 
+  OPERATION:   We first check to see if the motor is calibrated. If not, we run the calibration routine. We then move the motor at a slow rate until we detect an increase in effort (i.e. the motor hits an end stop). We record the motor's position to xmin and reverse the motor direction until we hit the opposite endstop and store its position to xmax.
 
   ARGUMENTS:   none
 
   RETURNS:     None
 
-  INPUTS / OUTPUTS: None
+  INPUTS / OUTPUTS: We read in the motor effort (u_f and u_f_1) and output to the motor.
 
-  LOCAL VARIABLES: int ticks, stepNo: Track the position along the readings and 
+  LOCAL VARIABLES: None 
 
-  SHARED VARIABLES: int page_count: This is our index of the page buffer array
-                    int page[]: This is the page buffer array 
-                    void * page_ptr: This void points to the start of the flash page we want to write to
-                    int lookup[]: the lookup table
+  SHARED VARIABLES: None
 
   GLOBAL VARIABLES: xmin, xmax: the minimum and maximum bounds. Here, we are setting them.
+                    mode:       character indicating control mode of the motor
+                    r:          setpoint for the controller
+                    u_f, u_f_1: the filtered "effort" currently and previous, used to detect sharp increases in effort  
 
   DEPENDENCIES:
-        MotorCtrl.h:     For interacting with the motor
-        MagneticEncoder.h: For reading from the encoder
-        TimeControlInt.h:  To read the global positioning variables
+        TimeControlInt.h:  To read and set the global positioning and setpoint variables
   -----------------------------------------------------------------------------
 */
 void calib_home(){
@@ -446,7 +444,7 @@ void calib_home(){
   while(abs(u_f) > UNLOADED_EFFORT_NOM || abs(u_f-u_f_1) > EFFORT_SLOPE_THRESH){
     delayMicroseconds(IDLE_US); // Idle until we reach nominal effort
   }
-  r = 0;                          // Stop moving
+  r = 0;                           // Stop moving
   delay(MOTOR_SETTLE);             // Wait for the motors to settle down
   xmax = yw;
   return;

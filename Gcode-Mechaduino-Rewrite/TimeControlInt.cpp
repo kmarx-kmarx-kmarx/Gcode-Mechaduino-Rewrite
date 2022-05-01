@@ -221,14 +221,10 @@ void TC5_Handler() {// gets called with CTRL_LOOP_HZ frequency
     if (u > 0)          //Depending on direction we want to apply torque, add or subtract a phase angle of PA for max effective torque.  PA should be equal to one full step angle: if the excitation angle is the same as the current position, we would not move!
     { //You can experiment with "Phase Advance" by increasing PA when operating at high speeds
       y += PA;          //update phase excitation angle
-      if (u > uMAX)     // limit control effort
-        u = uMAX;       //saturation limits max current command
     }
     else
     {
       y -= PA;          //update phase excitation angle
-      if (u < -uMAX)    // limit control effort
-        u = -uMAX;      //saturation limits max current command
     }
 
     // Bound u between +- uMAX
@@ -254,6 +250,48 @@ void TC5_Handler() {// gets called with CTRL_LOOP_HZ frequency
 }
 
 void TC4_Handler() {
-   TC4->COUNT16.INTFLAG.bit.OVF = 1;
-   return; 
+  // Handle the different commands
+  uint32_t cmd = (flags & COMMAND_MASK)>>COMMAND_SHIFT;
+  uint32_t idx = 0;
+  int32_t ending = 0;
+  
+  switch(cmd){
+    case NULL_COMMAND: // Null is the same as if we were to reach our target
+      r = set;
+      mode = 'x';
+      flags &= ~(1<<IN_PROGRESS);
+      break;
+      
+    case LINEAR_COMMAND: 
+      // Linear movemements are performed by taking the current position and looking up the target velocity on a table.      
+      idx = map(yw, ctrl_start, ctrl_end, 0, N_ELEMS-1);
+      r = precalculated_v[idx];
+      mode = 'v';
+      break;
+
+    case DWELL_COMMAND:
+      // For the dwell command, ctrl_start is the time of the start of the dwell and ctrl_end is the length of the dwell
+      // Hold the current position
+      r = set;
+      mode = 'x';
+      if(millis() - ctrl_start < ctrl_end){
+        // When we hit the end time we are no longer busy     
+        flags &= ~(1<<IN_PROGRESS);   
+      }
+   
+    case STOP_COMMAND:
+    default:
+      // Park the motor
+      mode = 'p';
+      break;      
+  }
+
+  // Handle case where we reach our setpoint. This happens in both linear and rapid
+  if(abs(yw - set) < DIST_THRESH){ // If we are close enough, go into positioning mode and hold the position
+    r = set;
+    mode = 'x';
+    flags &= ~(1<<IN_PROGRESS); // We reached the target and are no longer busy
+  }
+  
+  TC4->COUNT16.INTFLAG.bit.OVF = 1; // Clear overflow flag
 }
