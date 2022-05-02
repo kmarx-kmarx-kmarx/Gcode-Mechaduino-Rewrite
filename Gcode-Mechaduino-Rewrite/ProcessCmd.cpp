@@ -171,6 +171,39 @@ int32_t interpolate_pos(float target) {
   }
   return result;
 }
+/*
+  -----------------------------------------------------------------------------
+  DESCRIPTION: interpolate_vel(float target) checks which units we are using, mm or inches, the converts the target in that unit to a number of values.
+
+  OPERATION:   We rescale target by a factor of 1/MM_PER_ROT if we are in mm mode or 1/IN_PER_ROT if we are using inches. We then convert to a int32_t.
+
+  ARGUMENTS:  float target: target position in units mm or in
+
+  RETURNS:    int32_t result: target position in units VALS_PER_REV
+
+  LOCAL VARIABLES: None
+
+  SHARED VARIABLES: None
+
+  GLOBAL VARIABLES:
+        flags: check which unit we are using
+
+  DEPENDENCIES:
+        TimeControlInt.cpp for the flags
+
+  -----------------------------------------------------------------------------
+*/
+int32_t interpolate_vel(float target){
+  // Convert the target velocity in millimeters/min to the target rot/min
+  float result;
+  if(controller_flag & 1<<UNITS_MM){
+    result = (int32_t)((float)target /((float)MM_PER_ROT));
+  }
+  else{
+    result = (int32_t)((float)target /((float)IN_PER_ROT));
+  }
+  return abs(result);
+}
 
 /*
   -----------------------------------------------------------------------------
@@ -200,6 +233,34 @@ int32_t bound_pos(int32_t target) {
   result = min(max(target, xmin), xmax);
 
   return result;
+}
+
+/*
+  -----------------------------------------------------------------------------
+  DESCRIPTION: bound_vel(int32_t target) takes a position in units VALS_PER_REV per minute and bounds it between MIN_SPEED and MAX_SPEED
+  
+  OPERATION:   We bound the absolute value of the velocity and bound it between the minimum and maximum values. We then multiply it by its sign to get back the positive/negative
+
+  ARGUMENTS:  int32_t target: target position in units mm or in
+
+  RETURNS:    int32_t result: target position in units VALS_PER_REV per minute
+
+  LOCAL VARIABLES: None
+
+  SHARED VARIABLES: None
+
+  GLOBAL VARIABLES: None
+
+  DEPENDENCIES:
+        MotorCtrl.h: for MIN_SPEED and MAX_SPEED
+
+  -----------------------------------------------------------------------------
+*/
+int32_t bound_vel(int32_t target) {
+  // Bound the target position between xmin and xmax
+  int32_t sign = target/abs(target);
+
+  return sign * min(max(target, MIN_SPEED), MAX_SPEED);
 }
 
 /*
@@ -241,11 +302,37 @@ int32_t find_target(int32_t pos, int32_t x_init) {
   return result;
 }
 
+float calc_v(float v0, float vf, int32_t x0, int32_t xf, int32_t x){
+  float sign = (xf > x0) - (xf < x0); // figure out which direction we are going
+  v0 *= sign;
+  vf *= sign; // point velicities in the correct direction
+  float dv = vf - v0; // delta v
+  float dx = xf - x0; // delta x
+  float dxi = x0 - x; // negative displacement in x
+  float vi = v0 + dv/2.0; // intermediate value
+  float ac = (dv * dx) / vi;
+
+  // If we acceleration is 0 and we are in bounds, return the constant velocity
+  if(ac == 0 && x > x0 && x < xf){
+    return v0;
+  }
+  // If we are out of bounds return 0
+  if (sign * x > sign * xf){
+    return 0.0;
+  }
+  
+  // Calculate time as a function of position. We use all floats here for added precision
+  float t_est = abs(vi/(dv*dx) * (-sign*v0 + sqrt(v0*v0 - 2*dv*vi*dxi/dx)))
+    
+  return v0 + ac * t_est;
+}
+
 /*
   -----------------------------------------------------------------------------
   DESCRIPTION: linear_move_action takes a feedrate and target position and precalucaltes a velocity-over-position lookup table. It then sets the global variables to execute the move.
 
   OPERATION:   We first calculate our initial and final positions. We next take our initial and final feedrates and interpolate them as functions of position. It would create less error to recalculate the velocity at every position every iteration loop but this is too slow. Precomputing a velocity at a function of distance is good enough, runs faster, and is more resistant to errors.
+               For the sake of example, let N_ELEM = 5. We thus want to have a velocity for position x=x0, 1/5th of the way from x0 to xf, 2/5ths, etc. to 4/5ths. At x=x0 we set the feedrate to our initial feedrate and at 4/5ths of the way through we set the feedrate to our final feedrate. The intermediate feedrates are set to mimic constant acceleration.
 
   ARGUMENTS:   float setpoint, the target position entered by the user
                float fr, the end feedrate entered by the user
@@ -257,25 +344,42 @@ int32_t find_target(int32_t pos, int32_t x_init) {
   SHARED VARIABLES: None
 
   GLOBAL VARIABLES:
-    xmax:        from calibrating; we need to know where home is to use it as a reference
-
+    volatile int32_t precalculated_v[N_ELEM]: This holds the precomputed
+    
   INPUTS/OUTPUTS: None
 
   DEPENDENCIES:
-        TimeControlInt.h        for flag macros
-        Calibrate.h:            For xmax calibration values.
+        TimeControlInt.h        for flag, precalculated_v, and macros
   -----------------------------------------------------------------------------
 */
 void linear_move_action(float setpoint, float fr) {
-  int32_t f_start, f_end;
+  int32_t x0 = yw;           // Capture initial position from global variable
+  int32_t xf;                // Setpoint as an int  
+  int32_t xe;                // Intermediate value
 
   if (fr == NOT_FOUND) { // If no feedrate given, end feedrate will be the same as start feedrate
     fr = feedrate;
   }
 
-  
+  // Convert from inches/mm to motor rotation amount to our destination
+  xf = interpolate_pos(setpoint);
+  xf = find_target(xf, x0);
+  xf = bound_pos(xf);
 
-  feedrate = fr; // update feedrate
+  // Find the position (N_ELEM-1)/N_ELEM of the way through the travel
+  xe = (xf-x0)*N_ELEM/(N_ELEM-1) + x0;
+  
+  for(uint32_t i = 0; i < (N_ELEM-1); i++){
+    // First create our list of key positions
+    precalculated_v[i] = map(i, 0, N_ELEM-1,x0, xe);
+
+    // Calculate the velocity at each position, convert it to a int32_t, and bound it
+    precalculated_v[i] = bound_vel(interpolate_vel(calc_v(feedrate, fr, x0, xf, precalculated_v[i])));
+  }
+
+  precalculated_v[N_ELEM-1] = bound_vel(interpolate_vel(fr)); // end with user set feedrate
+
+  feedrate = fr; // update feedrate with what the user input
   return;
 }
 
