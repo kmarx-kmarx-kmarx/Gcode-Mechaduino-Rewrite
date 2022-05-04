@@ -75,9 +75,6 @@ void setup()
   setup_TCInterrupts(); // configure controller timed interrupts
   encoder_setup();      // Sets up SPI for communicating with encoder
 
-  // Enable the timed interrupts
-  // enable_TCInterrupts();
-
   // Clear the command buffer
   memset(cmd, 0, COMMAND_SIZE);
 

@@ -321,9 +321,10 @@ void send_debug(int interval){
   uint8_t * flagbytes = (uint8_t *) &flags;
   uint8_t * posbytes = (uint8_t *) &yw;
   uint8_t * effbytes = (uint8_t *) &u;
+  uint8_t * f_effbytes = (uint8_t *) &u_f;
   uint8_t * setbytes = (uint8_t *) &r;
   // put them into an array for easier manipulation
-  uint8_t * info[] = {timebytes, flagbytes, posbytes, effbytes, setbytes};
+  uint8_t * info[] = {timebytes, flagbytes, posbytes, effbytes, setbytes, f_effbytes};
   
   // We check the time
   uint32_t corrected_time = prevDebugTime - (prevDebugTime % interval);

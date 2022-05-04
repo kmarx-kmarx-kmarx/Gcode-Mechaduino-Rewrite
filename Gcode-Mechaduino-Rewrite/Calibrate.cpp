@@ -202,7 +202,6 @@ static bool wired_correctly(){
   int32_t stepIdx = 0;
 
   SerialUSB.println("Checking wiring...");
-  disable_TCInterrupts();
   output(0, uMAX >> 2); // go to point 0
   // Take a couple steps to make sure it's working right; sometimes the initial steps cause errors.
   stepIdx = one_step(CW, stepIdx);
@@ -276,7 +275,7 @@ static bool wired_correctly(){
         MagneticEncoder.h: For reading from the encoder
   -----------------------------------------------------------------------------
 */
-int32_t calibrate() {
+int32_t calibrate() {  
   uint32_t encoderReading = 0;
   uint32_t currentencoderReading = 0;
   uint32_t lastencoderReading = 0;
@@ -407,10 +406,12 @@ int32_t calibrate() {
 void calib_home(){
   // Check if we need to calibrate
   if (lookup[0] == 0 && lookup[128] == 0 && lookup[1024] == 0){
+    disable_TCInterrupts();
     if(calibrate()==CALIBRATION_FAIL){
       return;
     }
   }
+  enable_TCInterrupts();
   // Get initial angle calibration (will return to this later)  
   // Move as far "in" as possible before hitting a high-effort region
   // Make this the new 0
@@ -455,7 +456,7 @@ void calib_home(){
 //   int encoderReading = encoder_read();
 
 
-//   disable_TCInterrupts(); // Ensure interrupts don't move the motor
+//   di_TCInterrupts(); // Ensure interrupts don't move the motor
 
 //   for (int reading = 0; reading < avg; reading++) {  //average multple readings at each step
 //     encoderReading += encoder_read();

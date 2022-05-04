@@ -421,6 +421,7 @@ void process_g(char instruction[]) {
       break;
 
     case RAPID_MOV:
+      enable_TCInterrupts();
       // Move to target point at maximum feedrate
       code_f = search_code('X', instruction);
       if (code_f == NOT_FOUND) {
@@ -442,6 +443,7 @@ void process_g(char instruction[]) {
       r = bound_pos(target);
       break;
     case LINEAR_MOV:
+      enable_TCInterrupts();
       // First, we handle the case "G1 Fxxx" and set the feedrate to xxx without
       // doing any movement. This occurs when there is no X command.
       code_f = search_code('F', instruction);
@@ -487,12 +489,13 @@ void process_g(char instruction[]) {
       break;
 
     case HOME:
+      disable_TCInterrupts(); // Turn off interrupts - no interference from ctrl loop
       // Check if we want to do a full calibration - uses "A" code
       if (search_code('A', instruction) != NOT_FOUND) {
         xmin = 0;
         xmax = 0;
         calibrate();
-        calib_home();
+        return;
       }
       if ((search_code('X', instruction) == NOT_FOUND) || (xmin != 0 || xmax != 0)) {
         // Do the full calibration
@@ -503,11 +506,13 @@ void process_g(char instruction[]) {
         calib_home();
       }
       // Then, if calibrated, move it home at full speed.
+      enable_TCInterrupts();
       mode = 'x';
       r = xmin;
       break;
 
     case DWELL:
+      enable_TCInterrupts();
       code_f = search_code('P', instruction);
       if (code_f != NOT_FOUND) {
         // Set global variables with timing info and the command that we are doing
