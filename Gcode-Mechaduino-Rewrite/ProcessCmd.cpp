@@ -375,6 +375,7 @@ void linear_move_action(float setpoint, float fr) {
 
     // Calculate the velocity at each position, convert it to a int32_t, and bound it
     precalculated_v[i] = bound_vel(interpolate_vel(calc_v(feedrate, fr, x0, xf, precalculated_v[i])));
+//    SerialUSB.println(precalculated_v[i]);
   }
 
   precalculated_v[N_ELEM-1] = bound_vel(interpolate_vel(fr)); // end with user set feedrate
