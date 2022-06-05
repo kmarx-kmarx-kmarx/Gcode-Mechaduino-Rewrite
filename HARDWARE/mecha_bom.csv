@@ -1,0 +1,39 @@
+Qty (per board),URL to purchase,Value,Device,Package,Parts,Description
+1,https://www.mouser.com/ProductDetail/onsemi/MBR0520LT1G?qs=3JMERSakebqBWTiPUQp0nw%3D%3D,,DIODE_SOD-123,SOD-123,D1,Library:  MF_Discrete_Semiconductor
+4,DNP,,HEADER_01X03_PTH_2.54MM,PTH_2.54MM_01X03,"3V3, GND, V+, VIN",Library:  MF_Connectors
+1,DNP,,HEADER_01X06_PTH_2.54MM,PTH_2.54MM_01X06,J3,Library:  MF_Connectors
+1,DNP,,HEADER_01X10_PTH_2.54MM,PTH_2.54MM_01X10,J2,Library:  MF_Connectors
+1,https://www.mouser.com/ProductDetail/Phoenix-Contact/1935161?qs=W3wJikR1%252BS6eKzfFl8Rbew%3D%3D,,M025MM,SCREWTERMINAL-5MM-2,MOTOR_POWER,Standard 2-pin 0.1 header. Use with
+1,https://www.mouser.com/ProductDetail/Amphenol-Commercial-Products/G800W304018EU?qs=f9yNj16SXrKi9QS16pMdvA%3D%3D,,M04PTH,1X04,JP6,Header 4
+1,https://www.mouser.com/ProductDetail/CK/RKB2SJG250SMTR-LFS?qs=iLbezkQI%252Bsgsc0TY%2FPaT8A%3D%3D,,TACT_4.2MM,TACT4.2MM,SW2,Library:  MF_Switches
+1,https://www.mouser.com/ProductDetail/Amphenol-FCI/10118193-0001LF?qs=sGAEpiMZZMskC5GgilGuvoS%2F1XYiAR6jEb7RQVDPIjw%3D,,USB_MICRO_RIGHT,MICROUSB-RIGHT,J1,Library:  MF_Connectors
+2,https://www.mouser.com/ProductDetail/Susumu/KRL1632E-M-R150-F-T5?qs=B%2FFHBzrwtkbqYiRFE1Q74A%3D%3D,.15 Ohm,R-US_R1206,R1206,"R12, R13",RESISTOR
+1,https://www.mouser.com/ProductDetail/Murata-Electronics/GCM155R71H103KA55D?qs=aEuGZpxfbxUFaK62TPaKIA%3D%3D,0.01uF,CAP0402,0402-CAP,C6,Capacitor
+8,https://www.mouser.com/ProductDetail/Murata-Electronics/GCM155R71A104KA55D?qs=dNBNMwHp2UBmrB9ORE%252B4fA%3D%3D,0.1uF,CAP0402,0402-CAP,"C1, C2, C3, C4, C5, C14, C15, C16",Capacitor
+3,https://www.mouser.com/ProductDetail/Murata-Electronics/GRM155R61C105KA12D?qs=MNX0Jdkv8mRzFdIwfsySnw%3D%3D,1.0uF,CAP0402,0402-CAP,"C9, C19",Capacitor
+1,https://www.mouser.com/ProductDetail/Murata-Electronics/GRT188R61H105KE13D?qs=drgMNd%252BkGPNIxxtJByMGCg%3D%3D,1.0uF,CAP0603,0603-CAP,C13,Capacitor
+1,https://www.mouser.com/ProductDetail/YAGEO/RC0402FR-13100KL?qs=sGAEpiMZZMvdGkrng054t8AJgcdMkx7x5wItdGYa6aA%3D,100K,R-US_R0402-VISHAY,R0402-VISHAY,R16,RESISTOR
+1,https://www.digikey.com/en/products/detail/nichicon/RSA1E101MCN1GS/9452667,100uF,CAP_POLD,,C12,Capacitor Polarized
+8,https://www.mouser.com/ProductDetail/YAGEO/AC0402JR-0710KL?qs=sGAEpiMZZMvdGkrng054t7zOzNqIRvGcdA72Mg%252BCjzs%3D,10K,R-US_R0402-VISHAY,R0402-VISHAY,"R1, R2, R3. R4, R6, R11, R20, R21",RESISTOR
+2,https://www.mouser.com/ProductDetail/Murata-Electronics/GCM1555C1H180FA16D?qs=QzBtWTOodeXF93Udjj87vw%3D%3D,18pF,CAP0402,0402-CAP,"C7, C8",Capacitor
+2,https://www.mouser.com/ProductDetail/YAGEO/AC0402FR-131KL?qs=sGAEpiMZZMvdGkrng054t9iIrH0%2FpyhdcAUmeRjEEiagYm6zNi57IQ%3D%3D,1k,R-US_R0402-VISHAY,R0402-VISHAY,"R14, R15",RESISTOR
+1,https://www.digikey.com/en/products/detail/micro-crystal-ag/CM8V-T1A-32-768KHZ-7PF-20PPM-TA-QC/10499080,32768Khz,CRYSTAL2013,CRYSTAL-SMD-2.0X1.3,Y1,Crystal
+1,https://www.mouser.com/ProductDetail/YAGEO/RC0402JR-07330RL?qs=sGAEpiMZZMvdGkrng054t8Tx25L%252BvTaRTl05%2Fys9LAA%3D,330,R-US_R0402-VISHAY,R0402-VISHAY,R5,RESISTOR
+2,https://www.mouser.com/ProductDetail/YAGEO/RC0402JR-074K7L?qs=sGAEpiMZZMvdGkrng054t8Tx25L%252BvTaRcISktQPY%2Fkc%3D,4.7K,R-US_R0402-VISHAY,R0402-VISHAY,"R7, R8",RESISTOR
+1,https://www.mouser.com/ProductDetail/Littelfuse/1206L025YR?qs=PWhpLWeW8wedgRREX8zxcg%3D%3D,500mA,PTCSMD,PTC-1206,F1,Resettable Fuse PTC
+1,https://www.mouser.com/ProductDetail/ams/AS5047D-ATSM?qs=sGAEpiMZZMtJbfcMcIM8CDtKYLU%2FHQVqwPC3lViD45M%3D,AS5047D,AS5047D,TSSOP14,U$4,
+1,https://www.digikey.com/en/products/detail/allegro-microsystems/A4954ELPTR-T/2509910?lang=en&s=N4IgTCBcDaIIYBYCcBWBIC6BfIA&site=us&x=20&y=17,AVAGO_DRIVERTHERM,AVAGO_DRIVERTHERM,TSSOP16_THERM,U$1,
+2,https://www.digikey.com/en/products/detail/shenzhen-sunlord-electronics-co-ltd/PZ1608U471-1R0TF/14120402,BLM18PG471SN1D,INDUCTOR0603-TDK,0603-TDK,"L1, L2",Inductors
+4,https://www.mouser.com/ProductDetail/Nexperia/BSS138P215?qs=A1cBxND5mHJyVAOcRahidg%3D%3D,BSS138,MOSFET-NCHANNELSMD,SOT23-3,"Q1, Q3, Q4, Q5",NFET
+1,DNE,FRAME-LEDGER,FRAME-LEDGER,CREATIVE_COMMONS,FRAME1,Schematic Frame
+1,https://www.mouser.com/ProductDetail/Kingbright/APTD2012LCGCK?qs=AQlKX63v8RvNHN%2F9EGvNTg%3D%3D,Green,0044_KPT-2012YC,CHIPLED_0805,LED1,LED YELLOW - SMD - 0805
+1,DNE,MECHADUINO_LOGO,MECHADUINO_LOGO,MECHADUINO_LOGO,U$5,
+1,DNE,NEMA17_HOLE_PATTERNNEW,NEMA17_HOLE_PATTERNNEW,NEMA17_HOLE_PATTERN_2,U$2,
+1,https://www.mouser.com/ProductDetail/Nexperia/2N7002PW115?qs=8%252BCzCWLBsnDY2xJ5Ehsi7w%3D%3D,NFET,MOSFET-NCHANNEL2N7002PW,SOT323,Q2,Common NMOSFET Parts
+1,DNE,OSHW-LOGOMOD,OSHW-LOGOMOD,OSHW_LOGO_COPPER_MOD,LOGO4,Open Source Hardware Logo
+1,https://www.mouser.com/ProductDetail/Microchip-Technology-Atmel/ATSAMD21G18A-AUT?qs=sGAEpiMZZMtXHE36kCvv36ajhsTJC%252B%2FBgmvnKz0leZ0%3D,SAMD21G18A-AUT,INTEGRATEDCIRCUITS_1792_SAMD21G18A-AUT,INTEGRATEDCIRCUITS_TQFP48-7X7,IC1,Atmel D21 32bit ARM Cortex-M0  microcontroller - 48 PIN TQFP
+1,DNP,SHORT-HA5,SHORT-HA5,SHORT_ALL-50,SH1,Short between two nets
+1,DNP,SWD,CONNETTORI_0171_PH127-205DF055G00A,CONNETTORI_PINHEAD-2X5-P127,JP4,2x5 PASSO 1
+1,https://www.mouser.com/ProductDetail/STMicroelectronics/LDK130M33RY?qs=1mbolxNpo8eOrhac%2FeIeAA%3D%3D,LDK130M33RY,LDK130M33RY,SOT-23-5,U1,3v3 LDO
+1,DNE,TROPICAL_LABS_LOGO_1LOGO3,TROPICAL_LABS_LOGO_1LOGO3,LOGO3,U$3,
+1,https://www.kjmagnetics.com/proddetail.asp?prod=D42DIA&cat=8,Diametrically magnetized magnet,,,,
