@@ -1,0 +1,23 @@
+Quantity,URL to purchase,Cost (USD),Item,Use,Description
+1,3D printed,~,Back Block,1x in back block assembly,The back block for connecting to the motor
+1,3D printed,~,Front Block,1x in front block assembly,The front block for holding the syringe and rails
+1,3D printed,~,Ear Holder,1x in front block assembly,Holds the ears of the syringe so it doesn't slide along the axis of motion
+1,3D printed,~,Clamp,1x in front block assembly,Holds the syringe down
+1,3D printed,~,Carriage,1x in carriage assembly,Presses against the plunger to push liquid out
+1,3D printed,~,Carriage Cap,1x in carriage assembly,Pulls against the plunger to pull liquid in
+1,https://www.mcmaster.com/8973K298-8973K302/,$7.90,"12""x12"" Aluminum Sheet 0.0250"" Thick",1x in enclousure,Sheet metal wraps around the whole device for added stability
+3,https://www.mcmaster.com/91292A197,$1.50,M5x60 socket head cap screw,"2x in enclosure, 1x in front block","Holds the back block to the rails in the enclosure, attaches the clamp to the front block in the front block assembly"
+2,https://www.mcmaster.com/91292A128,$0.33,M5x20 socket head cap screw,2x in enclosure,Holds the front block to the rails
+4,https://www.mcmaster.com/6000N133/,$5.20,M5 T-Slotted Framing Fasteners,4x in enclosure,Holds poseidon prime to the rails
+4,,,M3 10 mm socket head cap screw,4x in enclosure,Holds enclosure sheet metal onto body
+4,,,M3 14 mm socket head cap screw,4x in back block,Holds motor to back block
+2,,,M3 20 mm socket head cap screw,2x in enclosure,Holds enclosure sheet metal onto body
+8,,,M3 25 mm socket head cap screw,8x in carriage,Holds the carriage block and cap together
+4,https://www.mcmaster.com/97259A101/,$0.32,M3 low square nut,4x in enclosure,Holds enclosure sheet metal onto body
+6,https://www.amazon.com/Befenybay-Collar-Shaft-Screw-Printer/dp/B07V41FRZS/ref=sr_1_4?dchild=1,$5.39,T8 shaft lock collar,"2x in back block, 4x in front block","Holds rails agaisnt motor in back block, holds rails in place in front block"
+1,,,Spring,1x front block,Applies pressure to clamp to hold the syringe in place. It should be roughly 50mm long and slightly larger diameter than the M5 screw
+1,,,M5 Nut,1x front block,Holds the spring in place in the front block
+2,,,200mm long 8mm aluminum rod,2x front block,The rods the carriage rides on
+1,https://www.amazon.com/uxcell-Stainless-Copper-Thread-Printer/dp/B07R1H5ZMV/ref=sr_1_36_sspa?dchild=1&,$7.25,2mm pitch 200mm Threaded rod,1x carriage,Rotating this rod moves the carriage back and forth
+8,,,M3 nut,8x carriage,Holds the carriage block and cap together
+2,,,Brass bushing,2x carraige,Lets the carriage slide along the rails with low friction
