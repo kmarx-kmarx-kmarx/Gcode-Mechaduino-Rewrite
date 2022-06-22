@@ -41,11 +41,8 @@ To control poseidon prime, we are using the [Mechaduino](https://github.com/jcch
 - MEDIA
 	- `1CarriageBlockAssembly.mp4`: Video of assembling the carriage block. Perform this step first when building poseidon prime
 	- `1CarriageBlockParts.jpg`: Still image of the parts necessary for assembling the carriage block
-	- `2FrontBlockAssembly.mp4`: Video of assembling the front block, step 2
 	- `2FrontBlockParts.jpg`: The parts of the front block
-	- `3BackBlockAssembly.mp4`
 	- `3BackBlockParts.jpg`
-	- `4EnclosureAssembly.mp4`
 	- `4EnclosureParts.jpg`
 	- `PoseidonPrimeWhole.jpg`: View of the whole poseidon prime when mounted on rails
 	- `PoseidonPrimeTip.jpg`: Close up on syringe end
@@ -59,4 +56,4 @@ See the BOMs for components, estimated prices, and where to purchase.
 The poseidon prime body could be printed in PLA, but PLA will deform and become brittle in an autoclave. It is advised to print usig polypropylene with a relatively high number of walls to ensure no water can enter the blocks. 
 
 ### Build Videos
-See the buld videos in the MEDIA folder. Follow the numbers 1 to 4 to see assembly in the proper order.
+See the [build videos](https://drive.google.com/drive/folders/1_DpoKlkosWUYHRFKvAd-3BIp1i3CB5ML?usp=sharing) for a guide on how to build poseidon prime.
